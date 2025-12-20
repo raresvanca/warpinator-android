@@ -1,4 +1,4 @@
-package slowscript.warpinator;
+package slowscript.warpinator.app;
 
 import android.app.Activity;
 import android.app.Application;
@@ -16,8 +16,10 @@ import org.conscrypt.Conscrypt;
 
 import java.security.Security;
 
+import slowscript.warpinator.core.service.MainService;
+
 public class WarpinatorApp extends Application implements Application.ActivityLifecycleCallbacks {
-    static int activitiesRunning = 0;
+    public static int activitiesRunning = 0;
     static final String TAG = "APP";
 
     @Override

@@ -1,4 +1,4 @@
-package slowscript.warpinator;
+package slowscript.warpinator.core.utils;
 
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
@@ -66,6 +66,11 @@ import java.util.Locale;
 import java.util.Random;
 
 import io.grpc.stub.StreamObserver;
+import slowscript.warpinator.R;
+import slowscript.warpinator.WarpProto;
+import slowscript.warpinator.core.model.Remote;
+import slowscript.warpinator.core.network.Server;
+import slowscript.warpinator.core.service.MainService;
 
 import static android.content.Context.CONNECTIVITY_SERVICE;
 import static android.content.Context.WIFI_SERVICE;
@@ -239,7 +244,7 @@ public class Utils {
         return null;
     }
 
-    static boolean isSameSubnet(InetAddress a, InetAddress b, int prefix) {
+    public static boolean isSameSubnet(InetAddress a, InetAddress b, int prefix) {
         var aa = a.getAddress();
         var ba = b.getAddress();
         if (aa.length != ba.length)
@@ -284,7 +289,7 @@ public class Utils {
                 .show();
     }
 
-    static void setEdgeToEdge(Window window) {
+    public static void setEdgeToEdge(Window window) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) // Problems with statusbar icon color on A5
             WindowCompat.enableEdgeToEdge(window);
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) // No automatic content protection
@@ -292,7 +297,7 @@ public class Utils {
         ViewGroupCompat.installCompatInsetsDispatch(window.getDecorView().getRootView());
     }
 
-    static void setToolbarInsets(View toolbar) {
+    public static void setToolbarInsets(View toolbar) {
         ViewCompat.setOnApplyWindowInsetsListener(toolbar, (v, i) -> {
             Insets insets = i.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
             v.setPadding(insets.left, insets.top, insets.right, 0);
@@ -300,7 +305,7 @@ public class Utils {
         });
     }
 
-    static void setContentInsets(View content) {
+    public static void setContentInsets(View content) {
         setContentInsets(content, false);
     }
     static void setContentInsets(View content, boolean handleIme) {
@@ -407,7 +412,7 @@ public class Utils {
         return false;
     }
 
-    static boolean isMyServiceRunning(Context ctx, Class<?> serviceClass) {
+    public static boolean isMyServiceRunning(Context ctx, Class<?> serviceClass) {
         ActivityManager manager = (ActivityManager) ctx.getSystemService(Context.ACTIVITY_SERVICE);
         assert manager != null;
         for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
@@ -496,7 +501,7 @@ public class Utils {
         }
     }
 
-    static class VoidObserver implements StreamObserver<WarpProto.VoidType> {
+    public static class VoidObserver implements StreamObserver<WarpProto.VoidType> {
         @Override public void onNext(WarpProto.VoidType value) {}
         @Override public void onError(Throwable t) {
             Log.e(TAG, "Call failed with exception", t);

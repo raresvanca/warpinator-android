@@ -1,4 +1,4 @@
-package slowscript.warpinator.preferences;
+package slowscript.warpinator.legacy.preferences;
 
 import android.content.Context;
 import android.util.AttributeSet;

@@ -1,4 +1,4 @@
-package slowscript.warpinator;
+package slowscript.warpinator.legacy;
 
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
@@ -10,6 +10,10 @@ import android.view.MenuItem;
 import android.widget.TextView;
 
 import com.google.android.material.appbar.MaterialToolbar;
+
+import slowscript.warpinator.BuildConfig;
+import slowscript.warpinator.R;
+import slowscript.warpinator.core.utils.Utils;
 
 public class AboutActivity extends AppCompatActivity {
 

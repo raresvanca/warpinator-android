@@ -1,4 +1,4 @@
-package slowscript.warpinator;
+package slowscript.warpinator.core.network;
 
 import android.util.Base64;
 import android.util.Log;
@@ -6,7 +6,6 @@ import android.util.Log;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.SocketException;
 import java.util.Arrays;
 
 public class CertServer implements Runnable{

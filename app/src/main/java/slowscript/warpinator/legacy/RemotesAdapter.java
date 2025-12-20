@@ -1,4 +1,4 @@
-package slowscript.warpinator;
+package slowscript.warpinator.legacy;
 
 import android.app.Activity;
 import android.content.Context;
@@ -14,6 +14,11 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
+
+import slowscript.warpinator.R;
+import slowscript.warpinator.core.model.Remote;
+import slowscript.warpinator.core.service.MainService;
+import slowscript.warpinator.core.utils.Utils;
 
 public class RemotesAdapter extends RecyclerView.Adapter<RemotesAdapter.ViewHolder> {
 

@@ -1,4 +1,4 @@
-package slowscript.warpinator;
+package slowscript.warpinator.legacy;
 
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
@@ -24,11 +24,13 @@ import androidx.preference.SwitchPreferenceCompat;
 
 import com.google.android.material.appbar.MaterialToolbar;
 
-import java.net.SocketException;
 import java.util.Objects;
 
-import slowscript.warpinator.preferences.ListPreference;
-import slowscript.warpinator.preferences.ResetablePreference;
+import slowscript.warpinator.R;
+import slowscript.warpinator.core.network.Server;
+import slowscript.warpinator.core.utils.Utils;
+import slowscript.warpinator.legacy.preferences.ListPreference;
+import slowscript.warpinator.legacy.preferences.ResetablePreference;
 
 public class SettingsActivity extends AppCompatActivity {
 

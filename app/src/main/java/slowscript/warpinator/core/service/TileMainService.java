@@ -1,4 +1,4 @@
-package slowscript.warpinator;
+package slowscript.warpinator.core.service;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -12,6 +12,10 @@ import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
+
+import slowscript.warpinator.R;
+import slowscript.warpinator.legacy.MainServiceBinder;
+import slowscript.warpinator.core.utils.Utils;
 
 @RequiresApi(api = Build.VERSION_CODES.N)
 public class TileMainService extends TileService implements MainService.RemoteCountObserver {

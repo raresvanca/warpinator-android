@@ -1,4 +1,4 @@
-package slowscript.warpinator;
+package slowscript.warpinator.core.model;
 
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
@@ -23,6 +23,16 @@ import io.grpc.ManagedChannel;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.okhttp.OkHttpChannelBuilder;
+import slowscript.warpinator.R;
+import slowscript.warpinator.WarpGrpc;
+import slowscript.warpinator.WarpProto;
+import slowscript.warpinator.WarpRegistrationGrpc;
+import slowscript.warpinator.core.network.Authenticator;
+import slowscript.warpinator.core.network.CertServer;
+import slowscript.warpinator.legacy.LocalBroadcasts;
+import slowscript.warpinator.core.service.MainService;
+import slowscript.warpinator.core.network.Server;
+import slowscript.warpinator.core.utils.Utils;
 import io.grpc.stub.StreamObserver;
 
 public class Remote {
@@ -59,7 +69,7 @@ public class Remote {
     public boolean errorReceiveCert = false; //Shown every time remote is opened until resolved
     public String errorText = "";
 
-    ArrayList<Transfer> transfers = new ArrayList<>();
+    public ArrayList<Transfer> transfers = new ArrayList<>();
 
     ManagedChannel channel;
     WarpGrpc.WarpBlockingStub blockingStub;
@@ -206,7 +216,7 @@ public class Remote {
     }
 
     // This does not update uuid, ip and authPort
-    void updateFromServiceRegistration(WarpProto.ServiceRegistration reg) {
+    public void updateFromServiceRegistration(WarpProto.ServiceRegistration reg) {
         hostname = reg.getHostname();
         api = reg.getApiVersion();
         port = reg.getPort();
@@ -215,7 +225,7 @@ public class Remote {
         staticService = true;
     }
 
-    boolean sameSubnetWarning() {
+    public boolean sameSubnetWarning() {
         if (status == RemoteStatus.CONNECTED)
             return false;
         if (MainService.svc.currentIPInfo == null)

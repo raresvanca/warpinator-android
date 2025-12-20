@@ -1,4 +1,4 @@
-package slowscript.warpinator;
+package slowscript.warpinator.legacy;
 
 import android.annotation.SuppressLint;
 import android.content.ClipData;
@@ -28,6 +28,11 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.common.base.Joiner;
+
+import slowscript.warpinator.R;
+import slowscript.warpinator.core.model.Transfer;
+import slowscript.warpinator.core.network.Server;
+import slowscript.warpinator.core.utils.Utils;
 
 public class TransfersAdapter extends RecyclerView.Adapter<TransfersAdapter.ViewHolder> {
 

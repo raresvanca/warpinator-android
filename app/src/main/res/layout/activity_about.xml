@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context=".AboutActivity"
+    tools:context=".legacy.AboutActivity"
     android:background="?android:colorBackground">
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"

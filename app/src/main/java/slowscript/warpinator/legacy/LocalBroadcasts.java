@@ -1,4 +1,4 @@
-package slowscript.warpinator;
+package slowscript.warpinator.legacy;
 
 import android.content.Context;
 import android.content.Intent;

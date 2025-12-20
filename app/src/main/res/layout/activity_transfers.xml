@@ -11,7 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="?android:colorBackground"
-        tools:context=".TransfersActivity">
+        tools:context=".legacy.TransfersActivity">
 
         <Button
             android:id="@+id/btnReconnect"

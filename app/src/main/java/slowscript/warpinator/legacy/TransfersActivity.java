@@ -1,4 +1,4 @@
-package slowscript.warpinator;
+package slowscript.warpinator.legacy;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -34,6 +34,14 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.util.ArrayList;
+
+import slowscript.warpinator.R;
+import slowscript.warpinator.app.WarpinatorApp;
+import slowscript.warpinator.core.model.Remote;
+import slowscript.warpinator.core.model.Transfer;
+import slowscript.warpinator.core.network.Server;
+import slowscript.warpinator.core.service.MainService;
+import slowscript.warpinator.core.utils.Utils;
 
 public class TransfersActivity extends AppCompatActivity {
 

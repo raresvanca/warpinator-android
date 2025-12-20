@@ -1,4 +1,4 @@
-package slowscript.warpinator;
+package slowscript.warpinator.legacy;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -31,6 +31,13 @@ import com.google.android.material.appbar.MaterialToolbar;
 
 import java.io.File;
 import java.util.ArrayList;
+
+import slowscript.warpinator.R;
+import slowscript.warpinator.core.model.Remote;
+import slowscript.warpinator.core.model.Transfer;
+import slowscript.warpinator.core.network.Server;
+import slowscript.warpinator.core.service.MainService;
+import slowscript.warpinator.core.utils.Utils;
 
 public class ShareActivity extends AppCompatActivity {
 

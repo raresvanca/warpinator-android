@@ -1,4 +1,4 @@
-package slowscript.warpinator;
+package slowscript.warpinator.core.network;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -25,7 +25,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
-import java.security.Security;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -58,6 +57,15 @@ import io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.NettyServerBuilder;
 import io.grpc.okhttp.OkHttpChannelBuilder;
 import io.netty.handler.ssl.SslContextBuilder;
+import slowscript.warpinator.R;
+import slowscript.warpinator.WarpProto;
+import slowscript.warpinator.WarpRegistrationGrpc;
+import slowscript.warpinator.core.model.Remote;
+import slowscript.warpinator.core.service.GrpcService;
+import slowscript.warpinator.core.service.MainService;
+import slowscript.warpinator.core.service.RegistrationService;
+import slowscript.warpinator.legacy.LocalBroadcasts;
+import slowscript.warpinator.core.utils.Utils;
 
 public class Server {
     private static final String TAG = "SRV";
@@ -80,7 +88,7 @@ public class Server {
     public ArrayList<String> recentRemotes = new ArrayList<>(); // recent manually connected remotes
     public boolean useCompression;
 
-    JmDNS jmdns;
+    public JmDNS jmdns;
     private ServiceInfo serviceInfo;
     private final ServiceListener serviceListener;
     private final SharedPreferences.OnSharedPreferenceChangeListener preferenceChangeListener;
@@ -189,7 +197,7 @@ public class Server {
             svc.prefs.edit().putBoolean("autoStop", false).apply();
     }
 
-    void saveFavorites() {
+    public void saveFavorites() {
         svc.prefs.edit().putStringSet("favorites", favorites).apply();
     }
 
@@ -265,7 +273,7 @@ public class Server {
         }
     }
 
-    WarpProto.ServiceRegistration getServiceRegistrationMsg() {
+    public WarpProto.ServiceRegistration getServiceRegistrationMsg() {
         return WarpProto.ServiceRegistration.newBuilder()
                 .setServiceId(uuid)
                 .setIp(svc.getCurrentIPStr())
@@ -276,7 +284,7 @@ public class Server {
                 .build();
     }
 
-    void registerWithHost(String host) {
+    public void registerWithHost(String host) {
         svc.executor.submit(() -> {
             Log.d(TAG, "Registering with host " + host);
             ManagedChannel channel = null;
@@ -330,7 +338,7 @@ public class Server {
         });
     }
 
-    void reannounce() {
+    public void reannounce() {
         svc.executor.submit(()->{
             Log.d(TAG, "Reannouncing");
             try {
@@ -350,7 +358,7 @@ public class Server {
         });
     }
 
-    void rescan() {
+    public void rescan() {
         svc.executor.submit(()->{
             Log.d(TAG, "Rescanning");
             //Need a new one every time since it can only run three times
@@ -397,7 +405,7 @@ public class Server {
         return newOut;
     }
 
-    void addRemote(Remote remote) {
+    public void addRemote(Remote remote) {
         //Add to remotes list
         MainService.remotes.put(remote.uuid, remote);
         svc.notifyDeviceCountUpdate();
@@ -523,7 +531,7 @@ public class Server {
         return bmp;
     }
 
-    ByteString getProfilePictureBytes() {
+    public ByteString getProfilePictureBytes() {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         Bitmap bmp = getProfilePicture(profilePicture, svc);
         bmp.compress(Bitmap.CompressFormat.PNG, 90, os);

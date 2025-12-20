@@ -1,6 +1,8 @@
-package slowscript.warpinator;
+package slowscript.warpinator.legacy;
 
 import android.os.Binder;
+
+import slowscript.warpinator.core.service.MainService;
 
 public class MainServiceBinder extends Binder {
 

@@ -1,4 +1,4 @@
-package slowscript.warpinator;
+package slowscript.warpinator.core.utils;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -8,6 +8,8 @@ import android.os.Build;
 import android.util.Log;
 
 import androidx.preference.PreferenceManager;
+
+import slowscript.warpinator.core.service.MainService;
 
 public class Autostart extends BroadcastReceiver {
 

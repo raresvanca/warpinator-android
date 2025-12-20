@@ -1,4 +1,4 @@
-package slowscript.warpinator;
+package slowscript.warpinator.core.service;
 
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -45,6 +45,18 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 
+import slowscript.warpinator.R;
+import slowscript.warpinator.core.model.Remote;
+import slowscript.warpinator.core.model.Transfer;
+import slowscript.warpinator.core.network.Authenticator;
+import slowscript.warpinator.legacy.LocalBroadcasts;
+import slowscript.warpinator.legacy.MainActivity;
+import slowscript.warpinator.legacy.MainServiceBinder;
+import slowscript.warpinator.core.network.Server;
+import slowscript.warpinator.legacy.TransfersActivity;
+import slowscript.warpinator.core.utils.Utils;
+import slowscript.warpinator.app.WarpinatorApp;
+
 public class MainService extends Service {
     private static final String TAG = "SERVICE";
 
@@ -52,9 +64,9 @@ public class MainService extends Service {
     public static String CHANNEL_INCOMING = "IncomingTransfer";
     public static String CHANNEL_PROGRESS = "TransferProgress";
     static int SVC_NOTIFICATION_ID = 1;
-    static int PROGRESS_NOTIFICATION_ID = 2;
+    public static int PROGRESS_NOTIFICATION_ID = 2;
     static String ACTION_STOP = "StopSvc";
-    static int WAKELOCK_TIMEOUT = 10; // 10 min
+    public static int WAKELOCK_TIMEOUT = 10; // 10 min
     static long pingTime = 10_000;
     static long reconnectTime = 40_000;
     static long autoStopTime = 60_000;
@@ -62,17 +74,17 @@ public class MainService extends Service {
     public int runningTransfers = 0;
     public boolean networkAvailable = false;
     public boolean apOn = false;
-    int notifId = 1300;
-    Utils.IPInfo currentIPInfo = null;
+    public int notifId = 1300;
+    public Utils.IPInfo currentIPInfo = null;
 
     public static MainService svc;
     public static ConcurrentHashMap<String, Remote> remotes = new ConcurrentHashMap<>();
     public static final ArrayList<WeakReference<RemoteCountObserver>> remoteCountObservers = new ArrayList<>();
     public static List<String> remotesOrder = Collections.synchronizedList(new ArrayList<>());
-    SharedPreferences prefs;
-    ExecutorService executor = Executors.newCachedThreadPool();
+    public SharedPreferences prefs;
+    public ExecutorService executor = Executors.newCachedThreadPool();
     public NotificationManagerCompat notificationMgr;
-    PowerManager.WakeLock wakeLock;
+    public PowerManager.WakeLock wakeLock;
 
     private NotificationCompat.Builder notifBuilder = null;
     private Server server;
@@ -204,7 +216,7 @@ public class MainService extends Service {
             logcatProcess.destroy();
     }
 
-    static void scheduleAutoStop() {
+    public static void scheduleAutoStop() {
         if (svc != null && svc.runningTransfers == 0 && svc.autoStopTask == null &&
                 svc.isAutoStopEnabled() && WarpinatorApp.activitiesRunning < 1) {
             svc.autoStopTask = new TimerTask() {
@@ -220,7 +232,7 @@ public class MainService extends Service {
         }
     }
 
-    static void cancelAutoStop() {
+    public static void cancelAutoStop() {
         if (svc != null && svc.autoStopTask != null) {
             Log.d(TAG, "Cancelling AutoStop");
             svc.autoStopTask.cancel();
@@ -370,7 +382,7 @@ public class MainService extends Service {
         }
     }
 
-    String getCurrentIPStr() {
+    public String getCurrentIPStr() {
         return currentIPInfo == null ? null : currentIPInfo.address.getHostAddress();
     }
 

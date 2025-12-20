@@ -1,4 +1,4 @@
-package slowscript.warpinator.preferences;
+package slowscript.warpinator.legacy.preferences;
 
 import android.app.Activity;
 import android.content.Context;
@@ -21,8 +21,8 @@ import androidx.preference.Preference;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import slowscript.warpinator.R;
-import slowscript.warpinator.Server;
-import slowscript.warpinator.SettingsActivity;
+import slowscript.warpinator.core.network.Server;
+import slowscript.warpinator.legacy.SettingsActivity;
 
 public class ProfilePicturePreference extends Preference {
 

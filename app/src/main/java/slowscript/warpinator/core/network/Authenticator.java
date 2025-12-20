@@ -1,4 +1,4 @@
-package slowscript.warpinator;
+package slowscript.warpinator.core.network;
 
 import android.util.Base64;
 import android.util.Log;
@@ -44,6 +44,9 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 
+import slowscript.warpinator.core.service.MainService;
+import slowscript.warpinator.core.utils.Utils;
+
 public class Authenticator {
     private static final String TAG = "AUTH";
     public static String DEFAULT_GROUP_CODE = "Warpinator";
@@ -55,7 +58,7 @@ public class Authenticator {
 
     static String cert_begin = "-----BEGIN CERTIFICATE-----\n";
     static String cert_end = "-----END CERTIFICATE-----";
-    static Exception certException = null;
+    public static Exception certException = null;
 
     public static byte[] getBoxedCertificate() {
         byte[] bytes = new byte[0];

@@ -1,4 +1,4 @@
-package slowscript.warpinator;
+package slowscript.warpinator.core.utils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

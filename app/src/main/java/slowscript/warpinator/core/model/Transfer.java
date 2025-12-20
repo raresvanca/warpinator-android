@@ -1,4 +1,4 @@
-package slowscript.warpinator;
+package slowscript.warpinator.core.model;
 
 import android.Manifest;
 import android.app.Notification;
@@ -38,9 +38,18 @@ import javax.annotation.Nullable;
 
 import io.grpc.StatusException;
 import io.grpc.stub.CallStreamObserver;
+import slowscript.warpinator.BuildConfig;
+import slowscript.warpinator.R;
+import slowscript.warpinator.WarpProto;
+import slowscript.warpinator.legacy.LocalBroadcasts;
+import slowscript.warpinator.core.service.MainService;
+import slowscript.warpinator.core.network.Server;
+import slowscript.warpinator.legacy.TransfersActivity;
+import slowscript.warpinator.core.utils.Utils;
+import slowscript.warpinator.core.utils.ZlibCompressor;
 
 import static java.util.zip.Deflater.DEFAULT_COMPRESSION;
-import static slowscript.warpinator.MainService.svc;
+import static slowscript.warpinator.core.service.MainService.svc;
 
 public class Transfer {
     public enum Direction { SEND, RECEIVE }
@@ -82,8 +91,8 @@ public class Transfer {
 
     private String currentRelativePath;
     private long currentLastMod = -1;
-    Uri currentUri;
-    File currentFile;
+    public Uri currentUri;
+    public File currentFile;
     private OutputStream currentStream;
     private boolean safeOverwriteFlag = false;
     public final ArrayList<String> errors = new ArrayList<>();
@@ -124,7 +133,7 @@ public class Transfer {
         return (int)((float)bytesTransferred / totalSize * 100f);
     }
 
-    void updateUI() {
+    public void updateUI() {
         long now = System.currentTimeMillis();
         if (getStatus() == Status.TRANSFERRING && (now - lastUiUpdate) < UI_UPDATE_LIMIT)
             return;
@@ -398,7 +407,7 @@ public class Transfer {
         }
     }
 
-    void startReceive() {
+    public void startReceive() {
         Log.i(TAG, "Transfer accepted, compression " + useCompression);
         setStatus(Status.TRANSFERRING);
         actualStartTime = System.currentTimeMillis();
@@ -410,7 +419,7 @@ public class Transfer {
         svc.wakeLock.acquire(MainService.WAKELOCK_TIMEOUT*60*1000L);
     }
 
-    void declineTransfer() {
+    public void declineTransfer() {
         Log.i(TAG, "Transfer declined");
         Remote r = MainService.remotes.get(remoteUUID);
         if (r != null)

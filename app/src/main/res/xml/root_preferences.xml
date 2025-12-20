@@ -3,12 +3,12 @@
 
     <PreferenceCategory android:title="@string/identity_settings_category">
 
-        <slowscript.warpinator.preferences.EditTextPreference
+        <slowscript.warpinator.legacy.preferences.EditTextPreference
             android:defaultValue="Android"
             android:key="displayName"
             android:title="@string/display_settings_title" />
 
-        <slowscript.warpinator.preferences.ProfilePicturePreference
+        <slowscript.warpinator.legacy.preferences.ProfilePicturePreference
             android:key="profile"
             android:title="@string/picture_settings_title" />
 
@@ -17,7 +17,7 @@
     <PreferenceCategory
         android:title="@string/transfer_setting_category">
 
-        <slowscript.warpinator.preferences.ResetablePreference
+        <slowscript.warpinator.legacy.preferences.ResetablePreference
             android:key="downloadDir"
             android:title="@string/download_dir_settings_title"
             app:summary="/downloads/direcory" />
@@ -71,20 +71,20 @@
     <PreferenceCategory
         android:title="@string/network_setting_category">
 
-        <slowscript.warpinator.preferences.EditTextPreference
+        <slowscript.warpinator.legacy.preferences.EditTextPreference
             android:key="groupCode"
             android:title="@string/group_code_settings_title"
             android:defaultValue="Warpinator" />
 
-        <slowscript.warpinator.preferences.EditTextPreference
+        <slowscript.warpinator.legacy.preferences.EditTextPreference
             android:title="@string/port_settings_title"
             android:key="port"
             android:defaultValue="42000" />
-        <slowscript.warpinator.preferences.EditTextPreference
+        <slowscript.warpinator.legacy.preferences.EditTextPreference
             android:title="@string/auth_port_settings_title"
             android:key="authPort"
             android:defaultValue="42001" />
-        <slowscript.warpinator.preferences.ListPreference
+        <slowscript.warpinator.legacy.preferences.ListPreference
             android:title="@string/network_interface_settings_title"
             android:key="networkInterface"
             android:defaultValue="auto" />
@@ -92,7 +92,7 @@
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/aspect_setting_category">
 
-        <slowscript.warpinator.preferences.ListPreference
+        <slowscript.warpinator.legacy.preferences.ListPreference
             android:defaultValue="sysDefault"
             android:entries="@array/theme_settings_array"
             android:entryValues="@array/theme_settings_entries_array"
