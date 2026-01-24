@@ -14,8 +14,6 @@ import android.net.wifi.WifiManager
 import android.net.wifi.WifiManager.MulticastLock
 import android.os.Build
 import android.os.IBinder
-import android.os.PowerManager
-import android.os.PowerManager.WakeLock
 import android.util.Log
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.LifecycleService
@@ -58,7 +56,6 @@ class MainService : LifecycleService() {
     var runningTransfers: Int = 0
     var notificationMgr: NotificationManagerCompat? = null
 
-    var wakeLock: WakeLock? = null
     private var timer: Timer? = null
     private var logcatProcess: Process? = null
     private var lock: MulticastLock? = null
@@ -88,12 +85,6 @@ class MainService : LifecycleService() {
         // Acquire multicast lock for mDNS
         acquireMulticastLock()
 
-        val powerManager = getSystemService(POWER_SERVICE) as PowerManager
-        wakeLock = powerManager.newWakeLock(
-            PowerManager.PARTIAL_WAKE_LOCK, "MainService::TransferWakeLock"
-        ).apply {
-            setReferenceCounted(false)
-        }
         // Server needs to load interface setting before this
         repository.currentIPInfo = Utils.iPAddress(this, server.get().networkInterface)
         Log.d(TAG, Utils.dumpInterfaces() ?: "No interfaces")
@@ -101,7 +92,7 @@ class MainService : LifecycleService() {
         // Sometimes fails. Maybe takes too long to get here?
         startForeground(
             WarpinatorNotificationManager.FOREGROUND_SERVICE_ID,
-            notificationManager.createForegroundNotification()
+            notificationManager.createForegroundNotification(),
         )
         Log.v(TAG, "Entered foreground")
 
@@ -112,8 +103,8 @@ class MainService : LifecycleService() {
             if (authenticator.certException != null) {
                 repository.updateServiceState(
                     ServiceState.InitializationFailed(
-                        Utils.dumpInterfaces(), authenticator.certException.toString()
-                    )
+                        Utils.dumpInterfaces(), authenticator.certException.toString(),
+                    ),
                 )
                 Log.w(TAG, "Server will not start due to error")
             } else {
@@ -287,7 +278,7 @@ class MainService : LifecycleService() {
         // Manually get state, some devices don't fire broadcast when registered
         repository.updateNetworkState { it.copy(isHotspot = isHotspotOn) }
         registerReceiver(
-            apStateChangeReceiver, IntentFilter("android.net.wifi.WIFI_AP_STATE_CHANGED")
+            apStateChangeReceiver, IntentFilter("android.net.wifi.WIFI_AP_STATE_CHANGED"),
         )
 
         networkCallback?.let {
@@ -395,13 +386,7 @@ class MainService : LifecycleService() {
     companion object {
         private const val TAG = "SERVICE"
 
-
-        @JvmField
-        var ACTION_STOP: String = "StopSvc"
-
-        @JvmField
-        var WAKELOCK_TIMEOUT: Int = 10 // 10 min
-
+        const val ACTION_STOP: String = "StopSvc"
 
         var pingTime: Long = 10000
         var reconnectTime: Long = 40000

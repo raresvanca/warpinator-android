@@ -1,14 +1,11 @@
 package slowscript.warpinator.core.network.worker
 
-import android.app.PendingIntent
 import android.content.Intent
 import android.media.MediaScannerConnection
-import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
 import android.provider.DocumentsContract
 import android.util.Log
-import androidx.core.app.NotificationCompat
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import com.google.common.io.Files
@@ -19,19 +16,18 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import slowscript.warpinator.BuildConfig
-import slowscript.warpinator.R
 import slowscript.warpinator.WarpProto
-import slowscript.warpinator.app.MainActivity
 import slowscript.warpinator.core.data.WarpinatorRepository
 import slowscript.warpinator.core.model.Transfer
 import slowscript.warpinator.core.model.Transfer.Direction
 import slowscript.warpinator.core.model.Transfer.Error
 import slowscript.warpinator.core.model.Transfer.FileType
 import slowscript.warpinator.core.model.Transfer.Status
-import slowscript.warpinator.core.service.MainService
 import slowscript.warpinator.core.service.RemotesManager
+import slowscript.warpinator.core.system.WarpinatorPowerManager
 import slowscript.warpinator.core.utils.Utils
 import slowscript.warpinator.core.utils.ZlibCompressor
 import java.io.File
@@ -48,7 +44,8 @@ import kotlin.math.max
 class TransferWorker(
     initialTransfer: Transfer,
     private val repository: WarpinatorRepository,
-    private val remotesManager: RemotesManager
+    private val remotesManager: RemotesManager,
+    private val powerManager: WarpinatorPowerManager,
 ) {
 
     // We keep a local mutable copy for logic, but expose updates via Repository
@@ -106,11 +103,11 @@ class TransferWorker(
 
         if (transferData.direction == Direction.Send) {
             val bps = ((transferData.bytesTransferred - lastBytes) / ((max(
-                1, now - lastUiUpdate
+                1, now - lastUiUpdate,
             )) / 1000f)).toLong()
             transferSpeed.add(bps)
             transferData = transferData.copy(
-                bytesPerSecond = transferSpeed.getMovingAverage()
+                bytesPerSecond = transferSpeed.getMovingAverage(),
             )
             lastBytes = transferData.bytesTransferred
         }
@@ -251,8 +248,7 @@ class TransferWorker(
         lastBytes = 0
         updateRepo()
 
-        // Acquire WakeLock via MainService (or Repository)
-        // MainService.svc.acquireWakeLock() // TODO
+        powerManager.acquire()
 
         var i = 0
         var iDir = 0
@@ -342,7 +338,7 @@ class TransferWorker(
             throw e
         } finally {
             inputStream?.close()
-            // MainService.svc.releaseWakeLock() // TODO
+            powerManager.release()
         }
     }.flowOn(Dispatchers.IO)
 
@@ -353,7 +349,7 @@ class TransferWorker(
             receivedPaths.clear()
             updateRepo()
 
-            // MainService.svc.acquireWakeLock() // TODO
+            powerManager.acquire()
 
             try {
                 chunkFlow.collect { chunk ->
@@ -370,7 +366,7 @@ class TransferWorker(
                     failReceive(Error.ConnectionLost(e.message))
                 }
             } finally {
-                // MainService.svc.releaseWakeLock() // TODO
+                powerManager.release()
             }
         }
 
@@ -461,7 +457,7 @@ class TransferWorker(
         val parsedUris = transferData.uris
         for (u in parsedUris) {
             repository.appContext.contentResolver.releasePersistableUriPermission(
-                u, Intent.FLAG_GRANT_READ_URI_PERMISSION
+                u, Intent.FLAG_GRANT_READ_URI_PERMISSION,
             )
         }
     }
@@ -528,10 +524,24 @@ class TransferWorker(
         receivedPaths.clear()
         updateRepo()
 
-        remotesManager.getWorker(transferData.remoteUuid)?.startReceiveTransfer(transferData)
+        repository.applicationScope.launch(Dispatchers.IO) {
+            val remoteWorker = remotesManager.getWorker(transferData.remoteUuid)
 
-        Log.i(TAG, "Acquiring wake lock for " + MainService.WAKELOCK_TIMEOUT + " min")
-//        MainService.svc.wakeLock?.acquire(MainService.WAKELOCK_TIMEOUT * 60 * 1000L) TODO: Re-enable wake lock
+            if (remoteWorker == null) {
+                Log.e(TAG, "Remote worker not found for ${transferData.remoteUuid}")
+                failReceive(Error.ConnectionLost("Remote disconnected"))
+                return@launch
+            }
+
+            try {
+                val chunkFlow = remoteWorker.connectForReceive(transferData)
+
+                processFileFlow(chunkFlow)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to start receive stream", e)
+                failReceive(Error.ConnectionLost(e.message))
+            }
+        }
     }
 
     fun declineTransfer() {
@@ -544,11 +554,15 @@ class TransferWorker(
 
     fun finishReceive() {
         Log.d(TAG, "Finalizing transfer")
-        if (errorList.isNotEmpty()) setStatus(Status.FinishedWithErrors(errorList.map {
-            Error.Generic(
-                it
-            )
-        }))
+        if (errorList.isNotEmpty()) setStatus(
+            Status.FinishedWithErrors(
+                errorList.map {
+                    Error.Generic(
+                        it,
+                    )
+                },
+            ),
+        )
         else setStatus(Status.Finished)
 
         closeStream()
@@ -558,7 +572,7 @@ class TransferWorker(
         finishSafeOverwrite()
 
         if (repository.prefs.downloadDirUri?.startsWith("content:") == false) MediaScannerConnection.scanFile(
-            repository.appContext, receivedPaths.toTypedArray(), null, null
+            repository.appContext, receivedPaths.toTypedArray(), null, null,
         )
         updateRepo()
     }
@@ -686,7 +700,7 @@ class TransferWorker(
             if (done == null) dir else "$done/$dir" //Path from rootUri - just to check existence
         var newDir = DocumentFile.fromTreeUri(
             repository.appContext,
-            Utils.getChildUri(repository.server.get().downloadDirUri!!.toUri(), absDir)
+            Utils.getChildUri(repository.server.get().downloadDirUri!!.toUri(), absDir),
         )
         if (newDir?.exists() == false) {
             newDir = parent!!.createDirectory(dir)
@@ -761,7 +775,7 @@ class TransferWorker(
                     java.nio.file.Files.move(
                         tempFileObj.toPath(),
                         java.nio.file.Paths.get(targetPath),
-                        java.nio.file.StandardCopyOption.ATOMIC_MOVE
+                        java.nio.file.StandardCopyOption.ATOMIC_MOVE,
                     )
                 } else {
                     // Fallback for older Android versions
@@ -785,7 +799,7 @@ class TransferWorker(
             res = (f.canonicalPath + "/").startsWith(repository.server.get().downloadDirUri!!)
         } catch (e: Exception) {
             Log.w(
-                TAG, "Could not resolve canonical path for " + f.absolutePath + ": " + e.message
+                TAG, "Could not resolve canonical path for " + f.absolutePath + ": " + e.message,
             )
         }
         return res
