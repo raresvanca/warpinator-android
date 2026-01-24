@@ -30,6 +30,7 @@ data class TransferUiState(
     val isSending: Boolean,
     val progressFloat: Float,
     val iconColor: Color,
+    val allowDismiss: Boolean,
     val actionButtons: TransferUiActionButtons,
     val progressIndicator: TransferUiProgressIndicator,
 )
@@ -87,6 +88,8 @@ fun Transfer.toUiState(): TransferUiState {
     val isRetryable =
         isSending && (status is Transfer.Status.Failed || status == Transfer.Status.Stopped || status is Transfer.Status.FinishedWithErrors || status == Transfer.Status.Declined)
 
+    val allowDismiss =
+        status is Transfer.Status.Failed || status == Transfer.Status.Stopped || status == Transfer.Status.Declined || status is Transfer.Status.FinishedWithErrors || status == Transfer.Status.Finished
 
     val actionButtons = when {
         status == Transfer.Status.WaitingPermission && !isSending -> TransferUiActionButtons.AcceptAndDecline
@@ -112,6 +115,7 @@ fun Transfer.toUiState(): TransferUiState {
         isSending = isSending,
         progressFloat = progressFloat,
         iconColor = this.getStatusColor(),
+        allowDismiss = allowDismiss,
         actionButtons = actionButtons,
         progressIndicator = progressIndicator,
     )

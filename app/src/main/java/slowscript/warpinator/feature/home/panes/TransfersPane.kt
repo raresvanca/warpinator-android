@@ -80,6 +80,7 @@ fun TransfersPane(
         onSendUris = { uris, isDir ->
             viewModel.sendUris(remote, uris, isDir)
         },
+        onClearTransfer = viewModel::clearTransfer,
         onClearTransfers = viewModel::clearAllFinished,
     )
 }
@@ -99,6 +100,7 @@ private fun TransferPaneContent(
     onStopTransfer: (Transfer) -> Unit = {},
     onRetryTransfer: (Transfer) -> Unit = {},
     onItemOpen: (Transfer) -> Unit = {},
+    onClearTransfer: (Transfer) -> Unit = {},
     onClearTransfers: (String) -> Unit = {},
 ) {
     val filePicker = rememberLauncherForActivityResult(
@@ -229,6 +231,7 @@ private fun TransferPaneContent(
                     onStop = onStopTransfer,
                     onRetry = onRetryTransfer,
                     onItemOpen = onItemOpen,
+                    onClear = onClearTransfer,
                     itemIndex = index,
                     itemListCount = transfers.size,
                 )
