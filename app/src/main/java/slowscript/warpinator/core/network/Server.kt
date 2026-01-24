@@ -61,11 +61,11 @@ import javax.jmdns.impl.tasks.resolver.ServiceResolver
 
 @Singleton
 class Server @Inject constructor(
-    val remotesManager: RemotesManager,
     val certServer: CertServer,
     val authenticator: Authenticator,
     val repository: WarpinatorRepository,
-    val transfersManager: TransfersManager
+    val remotesManager: dagger.Lazy<RemotesManager>,
+    val transfersManager: dagger.Lazy<TransfersManager>,
 ) {
     var displayName: String? = null
     var port: Int = 0
@@ -183,9 +183,14 @@ class Server @Inject constructor(
             val key = File(Utils.certsDir(repository.appContext), ".self.key-pem")
             val ssl =
                 GrpcSslContexts.forServer(cert, key).sslContextProvider(Conscrypt.newProvider())
-            gServer = NettyServerBuilder.forPort(port).sslContext(ssl.build())
-                .addService(GrpcService(repository, remotesManager, transfersManager))
-                .permitKeepAliveWithoutCalls(true).permitKeepAliveTime(5, TimeUnit.SECONDS).build()
+            gServer = NettyServerBuilder.forPort(port).sslContext(ssl.build()).addService(
+                GrpcService(
+                    repository,
+                    this,
+                    remotesManager.get(),
+                    transfersManager.get(),
+                ),
+            ).permitKeepAliveWithoutCalls(true).permitKeepAliveTime(5, TimeUnit.SECONDS).build()
             gServer!!.start()
             Log.d(TAG, "GRPC server started")
         } catch (e: Exception) {
@@ -266,7 +271,7 @@ class Server @Inject constructor(
                 val authPort = host.substring(sep + 1).toInt()
                 val ia = InetAddress.getByName(ip)
                 flagNotOnSameSubnet = !isSameSubnet(
-                    ia, repository.currentIPInfo!!.address, repository.currentIPInfo!!.prefixLength
+                    ia, repository.currentIPInfo!!.address, repository.currentIPInfo!!.prefixLength,
                 )
                 channel = OkHttpChannelBuilder.forTarget(host).usePlaintext().build()
                 val resp = WarpRegistrationGrpc.newBlockingStub(channel)
@@ -282,8 +287,8 @@ class Server @Inject constructor(
                         uuid = resp.serviceId,
                         address = null,
                         isFavorite = repository.favouritesState.value.contains(
-                            SavedFavourite(resp.serviceId)
-                        )
+                            SavedFavourite(resp.serviceId),
+                        ),
                     )
                 } else if (r.status == RemoteStatus.Connected) {
                     return@withContext ManualConnectionResult.AlreadyConnected
@@ -296,7 +301,7 @@ class Server @Inject constructor(
                     api = resp.apiVersion,
                     port = resp.port,
                     serviceName = resp.serviceId,
-                    staticService = true
+                    staticService = true,
                 )
 
                 var connected = false
@@ -305,12 +310,12 @@ class Server @Inject constructor(
                     connected = addRemote(updatedRemote)
                 } else {
                     if (updatedRemote.status == RemoteStatus.Disconnected || updatedRemote.status is RemoteStatus.Error) {
-                        connected = remotesManager.getWorker(updatedRemote.uuid)?.connect(
+                        connected = remotesManager.get().getWorker(updatedRemote.uuid)?.connect(
                             updatedRemote.hostname,
                             updatedRemote.address,
                             updatedRemote.authPort,
                             updatedRemote.port,
-                            updatedRemote.api
+                            updatedRemote.api,
                         ) ?: false
                     } else {
                         repository.updateRemote(updatedRemote.uuid) { updatedRemote }
@@ -345,7 +350,7 @@ class Server @Inject constructor(
             try {
                 var out = DNSOutgoing(DNSConstants.FLAGS_QR_RESPONSE or DNSConstants.FLAGS_AA)
                 for (answer in (jmdns as JmDNSImpl).localHost.answers(
-                    DNSRecordClass.CLASS_ANY, true, DNSConstants.DNS_TTL
+                    DNSRecordClass.CLASS_ANY, true, DNSConstants.DNS_TTL,
                 )) {
                     out = dnsAddAnswer(out, null, answer)
                 }
@@ -353,7 +358,7 @@ class Server @Inject constructor(
                     DNSRecordClass.CLASS_ANY,
                     true,
                     DNSConstants.DNS_TTL,
-                    (jmdns as JmDNSImpl).localHost
+                    (jmdns as JmDNSImpl).localHost,
                 )) {
                     out = dnsAddAnswer(out, null, answer)
                 }
@@ -383,7 +388,7 @@ class Server @Inject constructor(
                 val resolver = ServiceResolver(impl, SERVICE_TYPE)
                 val out = DNSOutgoing(DNSConstants.FLAGS_QR_QUERY).apply {
                     val question = DNSQuestion.newQuestion(
-                        SERVICE_TYPE, DNSRecordType.TYPE_PTR, DNSRecordClass.CLASS_IN, false
+                        SERVICE_TYPE, DNSRecordType.TYPE_PTR, DNSRecordClass.CLASS_IN, false,
                     )
                     resolver.addQuestion(this, question)
                 }
@@ -404,7 +409,7 @@ class Server @Inject constructor(
         try {
             var out = DNSOutgoing(DNSConstants.FLAGS_QR_RESPONSE or DNSConstants.FLAGS_AA)
             for (answer in (serviceInfo as ServiceInfoImpl).answers(
-                DNSRecordClass.CLASS_ANY, true, 0, (jmdns as JmDNSImpl).localHost
+                DNSRecordClass.CLASS_ANY, true, 0, (jmdns as JmDNSImpl).localHost,
             )) {
                 out = dnsAddAnswer(out, null, answer)
             }
@@ -436,7 +441,7 @@ class Server @Inject constructor(
     }
 
     suspend fun addRemote(remote: Remote): Boolean {
-        val worker = remotesManager.onRemoteDiscovered(remote) ?: return false
+        val worker = remotesManager.get().onRemoteDiscovered(remote) ?: return false
 
         return worker.connect(
             remote.hostname,
@@ -481,7 +486,7 @@ class Server @Inject constructor(
                 if (!props.contains("hostname")) {
                     Log.d(
                         TAG,
-                        "Ignoring incomplete service info. (no hostname, might be resolved later)"
+                        "Ignoring incomplete service info. (no hostname, might be resolved later)",
                     )
                     return
                 }
@@ -503,7 +508,7 @@ class Server @Inject constructor(
                         authPort = newAuthPort,
                         address = newAddress,
                         port = newPort,
-                        serviceAvailable = true
+                        serviceAvailable = true,
                     )
 
                     if ((newRemote.status === RemoteStatus.Disconnected) || (newRemote.status is RemoteStatus.Error)) {
@@ -512,7 +517,7 @@ class Server @Inject constructor(
 
                         // Launch connection
                         repository.applicationScope.launch(Dispatchers.IO) {
-                            remotesManager.onRemoteDiscovered(newRemote)?.connect(newRemote)
+                            remotesManager.get().onRemoteDiscovered(newRemote)?.connect(newRemote)
                         }
                     } else {
                         repository.addOrUpdateRemote(newRemote)
@@ -524,7 +529,7 @@ class Server @Inject constructor(
                 val newAddress = getIPv4Address(info.inetAddresses) ?: run {
                     Log.w(
                         TAG,
-                        "Service resolved with no IPv4 address. Most implementations don't properly support IPv6."
+                        "Service resolved with no IPv4 address. Most implementations don't properly support IPv6.",
                     )
                     return@serviceResolved
                 }
@@ -547,7 +552,7 @@ class Server @Inject constructor(
                     serviceAvailable = true,
                     serviceName = svcName,
                     isFavorite = repository.favouritesState.value.contains(SavedFavourite(svcName)),
-                    status = RemoteStatus.Disconnected
+                    status = RemoteStatus.Disconnected,
                 )
 
                 repository.applicationScope.launch(Dispatchers.IO) { addRemote(remote) }
@@ -560,7 +565,7 @@ class Server @Inject constructor(
         get() {
             val os = ByteArrayOutputStream()
             val bmp = ProfilePicturePainter.getProfilePicture(
-                profilePicture!!, repository.appContext, false
+                profilePicture!!, repository.appContext, false,
             )
             bmp.compress(Bitmap.CompressFormat.PNG, 90, os)
             return ByteString.copyFrom(os.toByteArray())

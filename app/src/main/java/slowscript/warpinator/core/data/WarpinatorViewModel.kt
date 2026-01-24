@@ -20,30 +20,31 @@ import javax.inject.Inject
 
 @HiltViewModel
 class WarpinatorViewModel @Inject constructor(
-    private val repository: WarpinatorRepository, private val server: Server
+    private val repository: WarpinatorRepository, private val server: Server,
 ) : ViewModel() {
     // UI States
     val remoteListState = repository.remoteListState.stateIn(
-        viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
+        viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList(),
     )
 
     val serviceState = repository.serviceState.stateIn(
-        viewModelScope, SharingStarted.WhileSubscribed(5000), ServiceState.Starting
+        viewModelScope, SharingStarted.WhileSubscribed(5000), ServiceState.Starting,
     )
     val networkState = repository.networkState.stateIn(
-        viewModelScope, SharingStarted.WhileSubscribed(5000), NetworkState(
+        viewModelScope, SharingStarted.WhileSubscribed(5000),
+        NetworkState(
             // Set isConnected to true so the UI doesn't show the disconnected state before the Server actually cheks connection
-            isConnected = true, isHotspot = false
-        )
+            isConnected = true, isHotspot = false,
+        ),
     )
 
     val refreshState = repository.refreshingState.stateIn(
-        viewModelScope, SharingStarted.WhileSubscribed(5000), false
+        viewModelScope, SharingStarted.WhileSubscribed(5000), false,
     )
 
     val address: String
         get() {
-            return "${repository.currentIPStr}:${repository.server.get().authPort}"
+            return "${repository.currentIPStr}:${server.authPort}"
         }
 
     // Remotes
@@ -64,7 +65,7 @@ class WarpinatorViewModel @Inject constructor(
     }
 
     suspend fun connectToRemoteHost(address: String): ManualConnectionResult {
-        return repository.server.get().tryRegisterWithHost(address)
+        return server.tryRegisterWithHost(address)
     }
 
     // Transfers
@@ -75,7 +76,7 @@ class WarpinatorViewModel @Inject constructor(
 
             for (uri in uris) {
                 contentResolver.takePersistableUriPermission(
-                    uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    uri, Intent.FLAG_GRANT_READ_URI_PERMISSION,
                 )
             }
             repository.transfersManager.get().initiateSend(remote, uris, isDir)
@@ -119,7 +120,7 @@ class WarpinatorViewModel @Inject constructor(
     fun openTransfer(transfer: Transfer): Boolean {
         if (transfer.direction == Transfer.Direction.Send) return false
 
-        val downloadUriStr = repository.server.get().downloadDirUri ?: return false
+        val downloadUriStr = server.downloadDirUri ?: return false
 
         try {
             val intent = Intent(Intent.ACTION_VIEW)
@@ -129,7 +130,7 @@ class WarpinatorViewModel @Inject constructor(
             if (transfer.fileCount > 1) {
                 if (downloadUriStr.startsWith("content:")) {
                     intent.setDataAndType(
-                        downloadUriStr.toUri(), DocumentsContract.Document.MIME_TYPE_DIR
+                        downloadUriStr.toUri(), DocumentsContract.Document.MIME_TYPE_DIR,
                     )
                 } else {
                     File(downloadUriStr)
@@ -141,7 +142,7 @@ class WarpinatorViewModel @Inject constructor(
                 if (downloadUriStr.startsWith("content:")) {
                     val treeUri = downloadUriStr.toUri()
                     val fileDoc = slowscript.warpinator.core.utils.Utils.getChildFromTree(
-                        repository.appContext, treeUri, filename
+                        repository.appContext, treeUri, filename,
                     )
 
                     if (fileDoc.exists()) {
@@ -156,7 +157,7 @@ class WarpinatorViewModel @Inject constructor(
                         val uri = androidx.core.content.FileProvider.getUriForFile(
                             repository.appContext,
                             "${repository.appContext.packageName}.provider",
-                            file
+                            file,
                         )
                         intent.setDataAndType(uri, transfer.singleMimeType)
                     } else {
@@ -168,16 +169,16 @@ class WarpinatorViewModel @Inject constructor(
             repository.appContext.startActivity(intent)
             return true
 
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             try {
                 val dirIntent = Intent(Intent.ACTION_VIEW)
                 dirIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 dirIntent.setDataAndType(
-                    downloadUriStr.toUri(), DocumentsContract.Document.MIME_TYPE_DIR
+                    downloadUriStr.toUri(), DocumentsContract.Document.MIME_TYPE_DIR,
                 )
                 repository.appContext.startActivity(dirIntent)
                 return true
-            } catch (e2: Exception) {
+            } catch (_: Exception) {
                 return false
             }
         }

@@ -26,6 +26,7 @@ import slowscript.warpinator.core.model.Transfer.Direction
 import slowscript.warpinator.core.model.Transfer.Error
 import slowscript.warpinator.core.model.Transfer.FileType
 import slowscript.warpinator.core.model.Transfer.Status
+import slowscript.warpinator.core.network.Server
 import slowscript.warpinator.core.service.RemotesManager
 import slowscript.warpinator.core.system.WarpinatorPowerManager
 import slowscript.warpinator.core.utils.Utils
@@ -44,6 +45,7 @@ import kotlin.math.max
 class TransferWorker(
     initialTransfer: Transfer,
     private val repository: WarpinatorRepository,
+    private val server: Server,
     private val remotesManager: RemotesManager,
     private val powerManager: WarpinatorPowerManager,
 ) {
@@ -383,7 +385,7 @@ class TransferWorker(
             finishSafeOverwrite()
 
             currentRelativePath = chunk.relativePath
-            if (repository.server.get().downloadDirUri.isNullOrEmpty()) {
+            if (server.downloadDirUri.isNullOrEmpty()) {
                 failReceive(Error.DownloadDirectoryNotSet)
                 return false
             }
@@ -474,7 +476,7 @@ class TransferWorker(
         if (BuildConfig.DEBUG && transferData.direction != Direction.Receive) {
             throw AssertionError("Assertion failed")
         }
-        if (repository.server.get().allowOverwrite) {
+        if (server.allowOverwrite) {
             for (file in transferData.topDirBaseNames) {
                 if (checkWillOverwrite(file)) {
                     transferData = transferData.copy(overwriteWarning = true)
@@ -700,7 +702,7 @@ class TransferWorker(
             if (done == null) dir else "$done/$dir" //Path from rootUri - just to check existence
         var newDir = DocumentFile.fromTreeUri(
             repository.appContext,
-            Utils.getChildUri(repository.server.get().downloadDirUri!!.toUri(), absDir),
+            Utils.getChildUri(server.downloadDirUri!!.toUri(), absDir),
         )
         if (newDir?.exists() == false) {
             newDir = parent!!.createDirectory(dir)
@@ -716,7 +718,7 @@ class TransferWorker(
     @Throws(FileNotFoundException::class)
     private fun openFileStream(fileName: String): OutputStream {
         var fName = fileName
-        if (repository.server.get().downloadDirUri!!.startsWith("content:")) {
+        if (server.downloadDirUri!!.startsWith("content:")) {
             val rootUri = repository.prefs.downloadDirUri!!.toUri()
             val root = DocumentFile.fromTreeUri(repository.appContext, rootUri)
             if (Utils.pathExistsInTree(repository.appContext, rootUri, fName)) {
@@ -736,7 +738,7 @@ class TransferWorker(
             currentUri = file!!.uri
             return repository.appContext.contentResolver.openOutputStream(currentUri!!)!!
         } else {
-            currentFile = File(repository.server.get().downloadDirUri, fName)
+            currentFile = File(server.downloadDirUri, fName)
             if (currentFile!!.exists()) {
                 currentFile = handleFileExists(currentFile!!)
             }
@@ -796,7 +798,7 @@ class TransferWorker(
     private fun validateFile(f: File): Boolean {
         var res = false
         try {
-            res = (f.canonicalPath + "/").startsWith(repository.server.get().downloadDirUri!!)
+            res = (f.canonicalPath + "/").startsWith(server.downloadDirUri!!)
         } catch (e: Exception) {
             Log.w(
                 TAG, "Could not resolve canonical path for " + f.absolutePath + ": " + e.message,
