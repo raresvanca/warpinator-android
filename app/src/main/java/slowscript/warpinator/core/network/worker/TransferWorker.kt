@@ -27,6 +27,7 @@ import slowscript.warpinator.core.model.Transfer.Error
 import slowscript.warpinator.core.model.Transfer.FileType
 import slowscript.warpinator.core.model.Transfer.Status
 import slowscript.warpinator.core.network.Server
+import slowscript.warpinator.core.notification.WarpinatorNotificationManager
 import slowscript.warpinator.core.service.RemotesManager
 import slowscript.warpinator.core.system.WarpinatorPowerManager
 import slowscript.warpinator.core.utils.Utils
@@ -48,6 +49,7 @@ class TransferWorker(
     private val server: Server,
     private val remotesManager: RemotesManager,
     private val powerManager: WarpinatorPowerManager,
+    private val notificationManager: WarpinatorNotificationManager,
 ) {
 
     // We keep a local mutable copy for logic, but expose updates via Repository
@@ -119,9 +121,6 @@ class TransferWorker(
         transferData = transferData.copy(status = currentStatus)
 
         repository.updateTransfer(transferData.remoteUuid, transferData)
-
-        // TODO: Update notification
-        // MainService.svc.updateProgress()
     }
 
     private fun setStatus(s: Status) {
@@ -488,34 +487,18 @@ class TransferWorker(
 
         val autoAccept = repository.prefs.autoAccept
 
-//        if (repository.prefs.notifyIncoming && !autoAccept) {
-//            val intent = Intent(repository.appContext, MainActivity::class.java)
-//            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-//            intent.putExtra("remote", transferData.remoteUuid)
-//            val immutable = PendingIntent.FLAG_IMMUTABLE
-//            val pendingIntent = PendingIntent.getActivity(
-//                repository.appContext, MainService.notifId, intent, immutable
-//            )
-//            val notifSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-//
-//            val remoteName =
-//                repository.remoteListState.value.find { it.uuid == transferData.remoteUuid }?.displayName
-//                    ?: ""
-//
-//            NotificationCompat.Builder(repository.appContext, MainService.CHANNEL_INCOMING)
-//                .setContentTitle(
-//                    repository.appContext.getString(
-//                        R.string.incoming_transfer, remoteName
-//                    )
-//                ).setContentText(
-//                    if (transferData.fileCount == 1L) transferData.singleFileName else repository.appContext.getString(
-//                        R.string.num_files, transferData.fileCount
-//                    )
-//                ).setSmallIcon(android.R.drawable.stat_sys_download_done)
-//                .setPriority(NotificationCompat.PRIORITY_HIGH).setSound(notifSound)
-//                .setContentIntent(pendingIntent).setAutoCancel(true).build()
-////            MainService.svc.notificationMgr!!.notify(MainService.notifId++, notification) TODO: Re-enable notification
-//        }
+        if (repository.prefs.notifyIncoming && !autoAccept) {
+            val remoteName =
+                repository.remoteListState.value.find { it.uuid == transferData.remoteUuid }?.displayName
+
+            notificationManager.showIncomingTransfer(
+                remoteName = remoteName,
+                remoteUuid = transferData.remoteUuid,
+                fileCount = transferData.fileCount,
+                singleFileName = transferData.singleFileName,
+            )
+        }
+
         if (autoAccept) this.startReceive()
     }
 

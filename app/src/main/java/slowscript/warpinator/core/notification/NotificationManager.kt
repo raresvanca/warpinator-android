@@ -1,6 +1,7 @@
 package slowscript.warpinator.core.notification
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -11,7 +12,6 @@ import android.content.pm.PackageManager
 import android.media.RingtoneManager
 import android.os.Build
 import android.text.format.Formatter
-import androidx.annotation.RequiresPermission
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -28,7 +28,7 @@ import javax.inject.Singleton
 
 @Singleton
 class WarpinatorNotificationManager @Inject constructor(
-    @param:ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context,
 ) {
 
     private val notificationMgr: NotificationManagerCompat = NotificationManagerCompat.from(context)
@@ -57,14 +57,19 @@ class WarpinatorNotificationManager @Inject constructor(
             .setContentTitle(context.getString(R.string.warpinator_notification_title))
             .setContentText("Tap to open").setSmallIcon(R.drawable.ic_notification)
             .setContentIntent(pendingIntent).addAction(
-                0, context.getString(R.string.warpinator_notification_button), stopPendingIntent
+                0,
+                context.getString(R.string.warpinator_notification_button),
+                stopPendingIntent,
             ).setPriority(NotificationCompat.PRIORITY_LOW).setShowWhen(false).setOngoing(true)
             .build()
     }
 
-    @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
+    @SuppressLint("MissingPermission")
     fun showIncomingTransfer(
-        remoteName: String?, remoteUuid: String, fileCount: Long, singleFileName: String?
+        remoteName: String?,
+        remoteUuid: String,
+        fileCount: Long,
+        singleFileName: String?,
     ) {
         if (!hasPermission()) return
 
@@ -72,8 +77,12 @@ class WarpinatorNotificationManager @Inject constructor(
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             putExtra("remote", remoteUuid)
         }
+
         val pendingIntent = PendingIntent.getActivity(
-            context, incomingNotificationIdCounter, intent, PendingIntent.FLAG_IMMUTABLE
+            context,
+            incomingNotificationIdCounter,
+            intent,
+            PendingIntent.FLAG_IMMUTABLE,
         )
 
         val contentText = if (fileCount == 1L) singleFileName
@@ -84,21 +93,23 @@ class WarpinatorNotificationManager @Inject constructor(
             .setContentText(contentText).setSmallIcon(android.R.drawable.stat_sys_download_done)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
-            .setContentIntent(pendingIntent).setAutoCancel(true).build()
-
+            .setContentIntent(pendingIntent).setAutoCancel(true).setGroup(GROUP_INCOMING).build()
 
         notificationMgr.notify(incomingNotificationIdCounter++, notification)
     }
 
-    @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
+    /**
+     * Updates the global progress notification.
+     * @return True if transfers are running, False if finished/idle.
+     */
+    @SuppressLint("MissingPermission")
     fun updateProgressNotification(remotes: List<Remote>): Boolean {
         if (!hasPermission()) return false
 
         if (progressBuilder == null) {
             progressBuilder = NotificationCompat.Builder(context, CHANNEL_PROGRESS)
                 .setSmallIcon(R.drawable.ic_notification).setOngoing(true)
-                .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setOnlyAlertOnce(true) // Prevent sound/vibration on every update
+                .setPriority(NotificationCompat.PRIORITY_LOW).setOnlyAlertOnce(true)
         }
 
         var runningTransfers = 0
@@ -131,8 +142,8 @@ class WarpinatorNotificationManager @Inject constructor(
                     context.getString(R.string.transfer_notification),
                     progress / 10f,
                     runningTransfers,
-                    Formatter.formatFileSize(context, bytesPerSecond)
-                )
+                    Formatter.formatFileSize(context, bytesPerSecond),
+                ),
             )
             notificationMgr.notify(PROGRESS_NOTIFICATION_ID, builder.build())
             return true
@@ -154,7 +165,7 @@ class WarpinatorNotificationManager @Inject constructor(
             val serviceChannel = NotificationChannel(
                 CHANNEL_SERVICE,
                 context.getString(R.string.service_running),
-                NotificationManager.IMPORTANCE_LOW
+                NotificationManager.IMPORTANCE_LOW,
             ).apply {
                 description = context.getString(R.string.notification_channel_description)
             }
@@ -162,13 +173,13 @@ class WarpinatorNotificationManager @Inject constructor(
             val incomingChannel = NotificationChannel(
                 CHANNEL_INCOMING,
                 context.getString(R.string.incoming_transfer_channel),
-                NotificationManager.IMPORTANCE_HIGH
+                NotificationManager.IMPORTANCE_HIGH,
             )
 
             val progressChannel = NotificationChannel(
                 CHANNEL_PROGRESS,
                 context.getString(R.string.transfer_progress_channel),
-                NotificationManager.IMPORTANCE_LOW
+                NotificationManager.IMPORTANCE_LOW,
             )
 
             manager.createNotificationChannel(serviceChannel)
@@ -180,7 +191,7 @@ class WarpinatorNotificationManager @Inject constructor(
     private fun hasPermission(): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ActivityCompat.checkSelfPermission(
-                context, Manifest.permission.POST_NOTIFICATIONS
+                context, Manifest.permission.POST_NOTIFICATIONS,
             ) == PackageManager.PERMISSION_GRANTED
         } else {
             true
@@ -191,6 +202,8 @@ class WarpinatorNotificationManager @Inject constructor(
         const val CHANNEL_SERVICE = "MainService"
         const val CHANNEL_INCOMING = "IncomingTransfer"
         const val CHANNEL_PROGRESS = "TransferProgress"
+        const val GROUP_INCOMING = "slowscript.warpinator.INCOMING_GROUP"
+
         const val FOREGROUND_SERVICE_ID = 1
         const val PROGRESS_NOTIFICATION_ID = 2
     }
