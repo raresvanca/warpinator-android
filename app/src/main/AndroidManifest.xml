@@ -11,19 +11,28 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29"/>
-    <uses-feature android:name="android.hardware.wifi" android:required="false"/>
-    <uses-feature android:name="android.hardware.faketouch" android:required="false"/>
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="29" />
+
+    <uses-feature
+        android:name="android.hardware.wifi"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.faketouch"
+        android:required="false" />
 
     <application
+        android:name=".app.WarpinatorApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:requestLegacyExternalStorage="true"
         android:roundIcon="@mipmap/ic_launcher_round"
-        android:supportsRtl="true"
-        android:name=".app.WarpinatorApplication" >
+        android:supportsRtl="true">
 
         <receiver
             android:name="slowscript.warpinator.core.utils.Autostart"
@@ -40,10 +49,11 @@
             </intent-filter>
         </receiver>
 
-        <activity android:name=".app.MainActivity"
+        <activity
+            android:name=".app.MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.Warpinator"
-            android:launchMode="singleTask">
+            android:launchMode="singleTask"
+            android:theme="@style/Theme.Warpinator">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -52,6 +62,7 @@
             <intent-filter>
                 <data android:scheme="warpinator" />
                 <action android:name="android.intent.action.VIEW" />
+
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
             </intent-filter>
@@ -68,23 +79,28 @@
             </intent-filter>
         </activity>
 
-        <receiver android:name=".core.service.StopSvcReceiver"
+        <receiver
+            android:name=".core.service.StopSvcReceiver"
             android:exported="false">
             <intent-filter>
                 <action android:name="StopSvc" />
             </intent-filter>
         </receiver>
 
-        <service android:name=".core.service.MainService"
-            android:foregroundServiceType="dataSync"/>
+        <service
+            android:name=".core.service.MainService"
+            android:foregroundServiceType="dataSync" />
 
-        <service android:name=".core.service.TileMainService"
+        <service
+            android:name=".core.service.TileMainService"
             android:exported="true"
-            android:label="@string/app_name"
             android:icon="@drawable/ic_notification"
-            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            tools:targetApi="24">
 
-            <meta-data android:name="android.service.quicksettings.TOGGLEABLE_TILE"
+            <meta-data
+                android:name="android.service.quicksettings.TOGGLEABLE_TILE"
                 android:value="true" />
 
             <intent-filter>
