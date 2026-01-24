@@ -16,7 +16,10 @@ import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import slowscript.warpinator.feature.about.AboutScreen
 import slowscript.warpinator.feature.connect_dialog.ProtocolLaunchEffect
+import slowscript.warpinator.feature.home.HomeScreen
+import slowscript.warpinator.feature.settings.SettingsScreen
 
 val LocalNavController = staticCompositionLocalOf<NavController?> {
     null
@@ -48,6 +51,7 @@ fun WarpinatorApp(
                     },
                 ) {
                     composable("home") {
+                        HomeScreen()
                     }
 
                     composable("settings") {
