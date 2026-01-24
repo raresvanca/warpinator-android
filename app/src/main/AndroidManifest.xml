@@ -23,8 +23,7 @@
         android:requestLegacyExternalStorage="true"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme"
-        android:name=".app.WarpinatorApp">
+        android:name=".app.WarpinatorApplication" >
 
         <receiver
             android:name="slowscript.warpinator.core.utils.Autostart"
@@ -41,33 +40,9 @@
             </intent-filter>
         </receiver>
 
-        <activity android:name=".legacy.AboutActivity"
-            android:label="@string/about"
-            android:theme="@style/AppTheme.NoActionBar" />
-
-        <activity android:name=".legacy.ShareActivity"
-            android:theme="@style/AppTheme.NoActionBar"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.SEND" />
-                <action android:name="android.intent.action.SEND_MULTIPLE" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-
-                <data android:mimeType="*/*" />
-            </intent-filter>
-        </activity>
-
-        <activity android:name=".legacy.SettingsActivity"
-            android:label="@string/settings"
-            android:theme="@style/AppTheme.NoActionBar" />
-
-        <activity android:name=".legacy.TransfersActivity"
-            android:theme="@style/AppTheme.NoActionBar" />
-
-        <activity android:name=".legacy.MainActivity"
+        <activity android:name=".app.MainActivity"
             android:exported="true"
-            android:theme="@style/AppTheme.NoActionBar"
+            android:theme="@style/Theme.Warpinator"
             android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -83,9 +58,17 @@
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="*/*" />
+            </intent-filter>
         </activity>
 
-        <receiver android:name=".core.service.MainService$StopSvcReceiver"
+        <receiver android:name=".core.service.StopSvcReceiver"
             android:exported="false">
             <intent-filter>
                 <action android:name="StopSvc" />
@@ -99,8 +82,7 @@
             android:exported="true"
             android:label="@string/app_name"
             android:icon="@drawable/ic_notification"
-            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
-            tools:targetApi="n">
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
 
             <meta-data android:name="android.service.quicksettings.TOGGLEABLE_TILE"
                 android:value="true" />
