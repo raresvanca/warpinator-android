@@ -19,7 +19,6 @@ import slowscript.warpinator.core.model.Remote.RemoteStatus
 import slowscript.warpinator.core.model.Transfer
 import slowscript.warpinator.core.model.preferences.RecentRemote
 import slowscript.warpinator.core.model.preferences.SavedFavourite
-import slowscript.warpinator.core.network.Server
 import slowscript.warpinator.core.service.RemotesManager
 import slowscript.warpinator.core.service.TransfersManager
 import slowscript.warpinator.core.utils.PreferenceManager
@@ -31,9 +30,8 @@ import javax.inject.Singleton
 class WarpinatorRepository @Inject constructor(
     val remotesManager: dagger.Lazy<RemotesManager>,
     val transfersManager: dagger.Lazy<TransfersManager>,
-    val server: dagger.Lazy<Server>,
     @param:ApplicationContext val appContext: Context,
-    @param:ApplicationScope val applicationScope: CoroutineScope
+    @param:ApplicationScope val applicationScope: CoroutineScope,
 ) {
     // States
     private val _remoteListState = MutableStateFlow<List<Remote>>(emptyList())
@@ -45,7 +43,7 @@ class WarpinatorRepository @Inject constructor(
     private val _statusMessages = MutableSharedFlow<String>(
         replay = 0, // Don't replay old messages to new subscribers
         extraBufferCapacity = 64, // Allow buffering if UI is busy
-        onBufferOverflow = BufferOverflow.DROP_OLDEST
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
     )
 
     // Observables
@@ -110,7 +108,7 @@ class WarpinatorRepository @Inject constructor(
                 val merged = newRemote.copy(
                     transfers = existing.transfers,
                     status = existing.status,
-                    isFavorite = existing.isFavorite
+                    isFavorite = existing.isFavorite,
                 )
                 currentList.toMutableList().apply { set(index, merged) }
             } else {
@@ -159,9 +157,11 @@ class WarpinatorRepository @Inject constructor(
     }
 
     private fun sortRemotes(list: List<Remote>): List<Remote> {
-        return list.sortedWith(compareByDescending<Remote> { it.isFavorite }.thenBy {
-            it.displayName ?: it.hostname ?: ""
-        })
+        return list.sortedWith(
+            compareByDescending<Remote> { it.isFavorite }.thenBy {
+                it.displayName ?: it.hostname ?: ""
+            },
+        )
     }
 
     // Transfers methods
@@ -210,7 +210,7 @@ class WarpinatorRepository @Inject constructor(
         if (transfer.direction == Transfer.Direction.Send) {
             applicationScope.launch {
                 transfersManager.get().retrySend(
-                    transfer, isDir = false
+                    transfer, isDir = false,
                 )
             }
         }

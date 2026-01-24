@@ -14,11 +14,16 @@ import slowscript.warpinator.core.data.WarpinatorRepository
 import slowscript.warpinator.core.model.Remote
 import slowscript.warpinator.core.model.preferences.SavedFavourite
 import slowscript.warpinator.core.network.Authenticator
+import slowscript.warpinator.core.network.Server
 import javax.inject.Inject
 
 class RegistrationService() : WarpRegistrationImplBase() {
     @Inject
     lateinit var repository: WarpinatorRepository
+
+    @Inject
+    lateinit var server: Server
+
 
     @Inject
     lateinit var remotesManager: RemotesManager
@@ -31,21 +36,21 @@ class RegistrationService() : WarpRegistrationImplBase() {
 
 
     override fun requestCertificate(
-        request: RegRequest, responseObserver: StreamObserver<RegResponse?>
+        request: RegRequest, responseObserver: StreamObserver<RegResponse?>,
     ) {
         val cert = authenticator.boxedCertificate
         val sendData = Base64.encode(cert, Base64.DEFAULT)
         Log.v(
-            TAG, "Sending certificate to " + request.getHostname() + " ; IP=" + request.getIp()
+            TAG, "Sending certificate to " + request.getHostname() + " ; IP=" + request.getIp(),
         ) // IP can by mine (Linux impl) or remote's
         responseObserver.onNext(
-            RegResponse.newBuilder().setLockedCertBytes(ByteString.copyFrom(sendData)).build()
+            RegResponse.newBuilder().setLockedCertBytes(ByteString.copyFrom(sendData)).build(),
         )
         responseObserver.onCompleted()
     }
 
     override fun registerService(
-        req: ServiceRegistration, responseObserver: StreamObserver<ServiceRegistration?>
+        req: ServiceRegistration, responseObserver: StreamObserver<ServiceRegistration?>,
     ) {
         val id = req.getServiceId()
         var r: Remote? = repository.remoteListState.value.find { it.uuid == id }
@@ -59,7 +64,7 @@ class RegistrationService() : WarpRegistrationImplBase() {
                     api = req.apiVersion,
                     port = req.port,
                     serviceName = req.serviceId,
-                    staticService = true
+                    staticService = true,
                 )
                 if (r.status === Remote.RemoteStatus.Disconnected || r.status is Remote.RemoteStatus.Error) {
                     scope.launch {
@@ -68,7 +73,7 @@ class RegistrationService() : WarpRegistrationImplBase() {
                             address = r.address,
                             authPort = r.authPort,
                             port = r.port,
-                            api = r.api
+                            api = r.api,
                         )
                     }
                 } else {
@@ -87,9 +92,9 @@ class RegistrationService() : WarpRegistrationImplBase() {
                 staticService = true,
                 isFavorite = repository.favouritesState.value.contains(SavedFavourite(req.serviceId)),
             )
-            scope.launch { repository.server.get().addRemote(r) }
+            scope.launch { server.addRemote(r) }
         }
-        responseObserver.onNext(repository.server.get().serviceRegistrationMsg)
+        responseObserver.onNext(server.serviceRegistrationMsg)
         responseObserver.onCompleted()
     }
 

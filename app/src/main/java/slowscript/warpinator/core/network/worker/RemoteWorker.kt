@@ -23,6 +23,7 @@ import slowscript.warpinator.core.model.Remote
 import slowscript.warpinator.core.model.Transfer
 import slowscript.warpinator.core.network.Authenticator
 import slowscript.warpinator.core.network.CertServer
+import slowscript.warpinator.core.network.Server
 import slowscript.warpinator.core.utils.Utils
 import java.net.DatagramPacket
 import java.net.DatagramSocket
@@ -33,6 +34,7 @@ import javax.net.ssl.SSLException
 class RemoteWorker(
     private val uuid: String,
     private var repository: WarpinatorRepository,
+    private var server: Server,
     private var authenticator: Authenticator,
 ) {
 
@@ -104,7 +106,7 @@ class RemoteWorker(
 
             withTimeoutOrNull(5000) {
                 coroutineStub?.ping(
-                    WarpProto.LookupName.newBuilder().setId(repository.server.get().uuid).build(),
+                    WarpProto.LookupName.newBuilder().setId(server.uuid).build(),
                 )
             } ?: throw Exception("Ping timeout")
         } catch (c: CancellationException) {
@@ -209,7 +211,7 @@ class RemoteWorker(
     suspend fun ping() {
         try {
             coroutineStub?.ping(
-                WarpProto.LookupName.newBuilder().setId(repository.server.get().uuid).build(),
+                WarpProto.LookupName.newBuilder().setId(server.uuid).build(),
             )
         } catch (e: Exception) {
             repository.updateRemoteStatus(uuid, Remote.RemoteStatus.Disconnected)
@@ -232,8 +234,8 @@ class RemoteWorker(
 
         val topDirBaseNames = t.topDirBaseNames
 
-        val info = WarpProto.OpInfo.newBuilder().setIdent(repository.server.get().uuid)
-            .setTimestamp(t.startTime).setReadableName(Utils.getDeviceName(repository.appContext))
+        val info = WarpProto.OpInfo.newBuilder().setIdent(server.uuid).setTimestamp(t.startTime)
+            .setReadableName(Utils.getDeviceName(repository.appContext))
             .setUseCompression(t.useCompression).build()
 
         val op = WarpProto.TransferOpRequest.newBuilder().setInfo(info).setSenderName("Android")
@@ -251,8 +253,7 @@ class RemoteWorker(
     }
 
     suspend fun connectForReceive(tData: Transfer): Flow<WarpProto.FileChunk> {
-        val info = WarpProto.OpInfo.newBuilder().setIdent(repository.server.get().uuid)
-            .setTimestamp(tData.startTime)
+        val info = WarpProto.OpInfo.newBuilder().setIdent(server.uuid).setTimestamp(tData.startTime)
             .setReadableName(Utils.getDeviceName(repository.appContext))
             .setUseCompression(tData.useCompression).build()
 
@@ -261,16 +262,14 @@ class RemoteWorker(
     }
 
     fun declineTransfer(t: Transfer) {
-        val info = WarpProto.OpInfo.newBuilder().setIdent(repository.server.get().uuid)
-            .setTimestamp(t.startTime).setReadableName(Utils.getDeviceName(repository.appContext))
-            .build()
+        val info = WarpProto.OpInfo.newBuilder().setIdent(server.uuid).setTimestamp(t.startTime)
+            .setReadableName(Utils.getDeviceName(repository.appContext)).build()
         asyncStub?.cancelTransferOpRequest(info, Utils.VoidObserver())
     }
 
     fun stopTransfer(t: Transfer, error: Boolean) {
-        val i = WarpProto.OpInfo.newBuilder().setIdent(repository.server.get().uuid)
-            .setTimestamp(t.startTime).setReadableName(Utils.getDeviceName(repository.appContext))
-            .build()
+        val i = WarpProto.OpInfo.newBuilder().setIdent(server.uuid).setTimestamp(t.startTime)
+            .setReadableName(Utils.getDeviceName(repository.appContext)).build()
         val info = WarpProto.StopInfo.newBuilder().setError(error).setInfo(i).build()
         asyncStub?.stopTransfer(info, Utils.VoidObserver())
     }
@@ -384,8 +383,8 @@ class RemoteWorker(
         while (tries < 10) {
             try {
                 val haveDuplex = coroutineStub?.checkDuplexConnection(
-                    WarpProto.LookupName.newBuilder().setId(repository.server.get().uuid)
-                        .setReadableName("Android").build(),
+                    WarpProto.LookupName.newBuilder().setId(server.uuid).setReadableName("Android")
+                        .build(),
                 )?.response ?: false
 
                 if (haveDuplex) return true
@@ -407,7 +406,7 @@ class RemoteWorker(
         return try {
             withTimeoutOrNull(10000) {
                 coroutineStub?.waitingForDuplex(
-                    WarpProto.LookupName.newBuilder().setId(repository.server.get().uuid)
+                    WarpProto.LookupName.newBuilder().setId(server.uuid)
                         .setReadableName(Utils.getDeviceName(repository.appContext)).build(),
                 )
             }?.response ?: false

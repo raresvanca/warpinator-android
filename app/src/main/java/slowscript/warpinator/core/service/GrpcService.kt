@@ -23,8 +23,9 @@ import java.util.UUID
 
 class GrpcService(
     val repository: WarpinatorRepository,
+    val server: Server,
     val remotesManager: RemotesManager,
-    val transfersManager: TransfersManager
+    val transfersManager: TransfersManager,
 ) : WarpGrpcKt.WarpCoroutineImplBase() {
 
     val scope = repository.applicationScope
@@ -40,8 +41,7 @@ class GrpcService(
                 (r.status === Remote.RemoteStatus.Connected) || (r.status === Remote.RemoteStatus.AwaitingDuplex)
 
             if (r.status is Remote.RemoteStatus.Error || r.status === Remote.RemoteStatus.Disconnected) {
-                val serviceInfo =
-                    repository.server.get().jmdns?.getServiceInfo(Server.SERVICE_TYPE, r.uuid)
+                val serviceInfo = server.jmdns?.getServiceInfo(Server.SERVICE_TYPE, r.uuid)
                 if (serviceInfo != null && serviceInfo.inetAddresses.isNotEmpty()) {
                     val newIp = serviceInfo.inetAddresses[0]
                     val newPort = serviceInfo.port
@@ -86,12 +86,12 @@ class GrpcService(
     }
 
     override suspend fun getRemoteMachineInfo(request: LookupName): RemoteMachineInfo {
-        return RemoteMachineInfo.newBuilder().setDisplayName(repository.server.get().displayName)
+        return RemoteMachineInfo.newBuilder().setDisplayName(server.displayName)
             .setUserName("android").build()
     }
 
     override fun getRemoteMachineAvatar(request: LookupName): Flow<RemoteMachineAvatar> = flow {
-        val bytes = repository.server.get().profilePictureBytes
+        val bytes = server.profilePictureBytes
         emit(RemoteMachineAvatar.newBuilder().setAvatarChunk(bytes).build())
     }
 
@@ -116,7 +116,7 @@ class GrpcService(
             singleMimeType = request.mimeIfSingle,
             singleFileName = request.nameIfSingle,
             topDirBaseNames = request.topDirBasenamesList,
-            useCompression = request.info.useCompression && repository.server.get().useCompression
+            useCompression = request.info.useCompression && server.useCompression,
         )
 
         transfersManager.onIncomingTransferRequest(t)
@@ -135,14 +135,14 @@ class GrpcService(
 
         // Update compression setting based on agreement
         val updatedTransfer = t.copy(
-            useCompression = t.useCompression && request.useCompression
+            useCompression = t.useCompression && request.useCompression,
         )
 
         repository.updateTransfer(t.remoteUuid, updatedTransfer)
 
         val worker = transfersManager.getWorker(t.remoteUuid, t.startTime) ?: return flow {
             Log.e(
-                TAG, "Worker not found for active transfer"
+                TAG, "Worker not found for active transfer",
             )
         }
 
@@ -163,7 +163,7 @@ class GrpcService(
     }
 
     override suspend fun stopTransfer(
-        request: StopInfo
+        request: StopInfo,
     ): WarpProto.VoidType {
         Log.d(TAG, "Transfer stopped by the other side")
         val t = getTransfer(request.info) ?: return WarpProto.VoidType.getDefaultInstance()
