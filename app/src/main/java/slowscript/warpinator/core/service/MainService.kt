@@ -116,6 +116,16 @@ class MainService : LifecycleService() {
 
         listenOnNetworkChanges()
 
+        // Consume active transfers
+        lifecycleScope.launch {
+            repository.remoteListState.collect { remotes ->
+                val isTransferring = notificationManager.updateProgressNotification(remotes)
+
+                // Update local tracking for auto-stop logic
+                runningTransfers = if (isTransferring) 1 else 0
+            }
+        }
+
         // Notify the tile service that MainService just started
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             TileMainService.requestListeningState(this)

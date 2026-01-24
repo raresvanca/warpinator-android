@@ -9,6 +9,7 @@ import slowscript.warpinator.core.model.Remote
 import slowscript.warpinator.core.model.Transfer
 import slowscript.warpinator.core.network.Server
 import slowscript.warpinator.core.network.worker.TransferWorker
+import slowscript.warpinator.core.notification.WarpinatorNotificationManager
 import slowscript.warpinator.core.system.WarpinatorPowerManager
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
@@ -20,6 +21,7 @@ class TransfersManager @Inject constructor(
     private val server: Server,
     private val remotesManager: RemotesManager,
     private val powerManager: WarpinatorPowerManager,
+    private val notificationManager: WarpinatorNotificationManager,
 ) {
     private val activeWorkers = ConcurrentHashMap<String, TransferWorker>()
 
@@ -48,7 +50,14 @@ class TransfersManager @Inject constructor(
         }
 
     private suspend fun startSendWorker(transfer: Transfer, isDir: Boolean) {
-        val worker = TransferWorker(transfer, repository, server, remotesManager, powerManager)
+        val worker = TransferWorker(
+            initialTransfer = transfer,
+            repository = repository,
+            server = server,
+            remotesManager = remotesManager,
+            powerManager = powerManager,
+            notificationManager = notificationManager,
+        )
 
         val preparedTransfer = worker.prepareSend(isDir)
         val key = getTransferKey(preparedTransfer.remoteUuid, preparedTransfer.startTime)
@@ -59,7 +68,14 @@ class TransfersManager @Inject constructor(
     fun onIncomingTransferRequest(transfer: Transfer) {
         repository.addTransfer(transfer.remoteUuid, transfer)
 
-        val worker = TransferWorker(transfer, repository, server, remotesManager, powerManager)
+        val worker = TransferWorker(
+            initialTransfer = transfer,
+            repository = repository,
+            server = server,
+            remotesManager = remotesManager,
+            powerManager = powerManager,
+            notificationManager = notificationManager,
+        )
         val key = getTransferKey(transfer.remoteUuid, transfer.startTime)
         activeWorkers[key] = worker
 
