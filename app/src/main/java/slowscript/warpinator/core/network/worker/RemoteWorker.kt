@@ -10,6 +10,7 @@ import io.grpc.okhttp.OkHttpChannelBuilder
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
@@ -48,25 +49,25 @@ class RemoteWorker(
 
     /** Returns false if connection failed */
     suspend fun connect(
-        hostname: String?, address: InetAddress?, authPort: Int, port: Int, api: Int
+        hostname: String?, address: InetAddress?, authPort: Int, port: Int, api: Int,
     ): Boolean = withContext(
-        Dispatchers.IO
+        Dispatchers.IO,
     ) {
         Log.i(TAG, "Connecting to $hostname, api $api")
 
         repository.updateRemoteStatus(uuid, Remote.RemoteStatus.Connecting)
 
         if (!receiveCertificate(
-                api = api, port = port, hostname = hostname, address = address, authPort = authPort
+                api = api, port = port, hostname = hostname, address = address, authPort = authPort,
             )
         ) {
             if (hasGroupCodeException) {
                 repository.updateRemoteStatus(
-                    uuid, Remote.RemoteStatus.Error(hasGroupCodeException = true)
+                    uuid, Remote.RemoteStatus.Error(hasGroupCodeException = true),
                 )
             } else {
                 repository.updateRemoteStatus(
-                    uuid, Remote.RemoteStatus.Error(isCertificateUnreceived = true)
+                    uuid, Remote.RemoteStatus.Error(isCertificateUnreceived = true),
                 )
             }
             return@withContext false
@@ -103,7 +104,7 @@ class RemoteWorker(
 
             withTimeoutOrNull(5000) {
                 coroutineStub?.ping(
-                    WarpProto.LookupName.newBuilder().setId(repository.server.get().uuid).build()
+                    WarpProto.LookupName.newBuilder().setId(repository.server.get().uuid).build(),
                 )
             } ?: throw Exception("Ping timeout")
         } catch (c: CancellationException) {
@@ -111,7 +112,7 @@ class RemoteWorker(
         } catch (e: SSLException) {
             Log.e(TAG, "Authentication with remote $hostname failed: ${e.message}", e)
             repository.updateRemoteStatus(
-                uuid, Remote.RemoteStatus.Error(e.localizedMessage ?: "", hasSslException = true)
+                uuid, Remote.RemoteStatus.Error(e.localizedMessage ?: "", hasSslException = true),
             )
             return@withContext false
         } catch (e: Exception) {
@@ -130,7 +131,7 @@ class RemoteWorker(
         if (!waitForDuplex(api = api)) {
             Log.e(TAG, "Couldn't establish duplex with $hostname")
             repository.updateRemoteStatus(
-                uuid, Remote.RemoteStatus.Error(isDuplexFailed = true)
+                uuid, Remote.RemoteStatus.Error(isDuplexFailed = true),
             )
             channel?.shutdown()
             return@withContext false
@@ -144,15 +145,16 @@ class RemoteWorker(
             if (info != null) {
                 repository.updateRemote(uuid) { remote ->
                     remote.copy(
-                        displayName = info.displayName, userName = info.userName
+                        displayName = info.displayName, userName = info.userName,
                     )
                 }
             }
         } catch (ex: StatusRuntimeException) {
             repository.updateRemoteStatus(
-                uuid, Remote.RemoteStatus.Error(
-                    ex.localizedMessage ?: "", hasUsernameException = true
-                )
+                uuid,
+                Remote.RemoteStatus.Error(
+                    ex.localizedMessage ?: "", hasUsernameException = true,
+                ),
             )
             Log.e(TAG, "connect: cannot get name: connection broken?", ex)
             channel?.shutdown()
@@ -172,7 +174,7 @@ class RemoteWorker(
             val bytes = bs.toByteString().toByteArray()
             if (bytes.isNotEmpty()) {
                 repository.updateRemotePicture(
-                    uuid, BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                    uuid, BitmapFactory.decodeByteArray(bytes, 0, bytes.size),
                 )
             }
         } catch (_: Exception) {
@@ -207,7 +209,7 @@ class RemoteWorker(
     suspend fun ping() {
         try {
             coroutineStub?.ping(
-                WarpProto.LookupName.newBuilder().setId(repository.server.get().uuid).build()
+                WarpProto.LookupName.newBuilder().setId(repository.server.get().uuid).build(),
             )
         } catch (e: Exception) {
             repository.updateRemoteStatus(uuid, Remote.RemoteStatus.Disconnected)
@@ -248,24 +250,14 @@ class RemoteWorker(
         }
     }
 
-    fun startReceiveTransfer(tData: Transfer) {
-        repository.applicationScope.launch(Dispatchers.IO) {
-            val worker = TransferWorker(tData, repository, repository.remotesManager.get())
+    suspend fun connectForReceive(tData: Transfer): Flow<WarpProto.FileChunk> {
+        val info = WarpProto.OpInfo.newBuilder().setIdent(repository.server.get().uuid)
+            .setTimestamp(tData.startTime)
+            .setReadableName(Utils.getDeviceName(repository.appContext))
+            .setUseCompression(tData.useCompression).build()
 
-            val info = WarpProto.OpInfo.newBuilder().setIdent(repository.server.get().uuid)
-                .setTimestamp(tData.startTime)
-                .setReadableName(Utils.getDeviceName(repository.appContext))
-                .setUseCompression(tData.useCompression).build()
-
-            try {
-                val chunkFlow = coroutineStub!!.startTransfer(info)
-
-                worker.processFileFlow(chunkFlow)
-            } catch (e: Exception) {
-                Log.e(TAG, "Error starting receive transfer", e)
-                worker.stop(error = true)
-            }
-        }
+        // This might throw, caller (TransferWorker) must handle exceptions
+        return coroutineStub!!.startTransfer(info)
     }
 
     fun declineTransfer(t: Transfer) {
@@ -285,19 +277,19 @@ class RemoteWorker(
 
     // Private helpers
     private fun receiveCertificate(
-        hostname: String?, address: InetAddress?, authPort: Int, port: Int, api: Int
+        hostname: String?, address: InetAddress?, authPort: Int, port: Int, api: Int,
     ): Boolean {
         hasGroupCodeException = false
         if (api == 2) {
             if (receiveCertificateV2(
-                    hostname = hostname, address = address, authPort = authPort
+                    hostname = hostname, address = address, authPort = authPort,
                 )
             ) return true
             else if (hasGroupCodeException) return false
             else Log.d(TAG, "Falling back to receiveCertificateV1")
         }
         return receiveCertificateV1(
-            port = port, hostname = hostname, address = address
+            port = port, hostname = hostname, address = address,
         )
     }
 
@@ -346,7 +338,7 @@ class RemoteWorker(
     }
 
     private fun receiveCertificateV2(
-        hostname: String?, address: InetAddress?, authPort: Int
+        hostname: String?, address: InetAddress?, authPort: Int,
     ): Boolean {
         Log.v(TAG, "Receiving certificate (V2) from $hostname at $address")
         var authChannel: ManagedChannel? = null
@@ -361,7 +353,7 @@ class RemoteWorker(
                 .withDeadlineAfter(8, TimeUnit.SECONDS).requestCertificate(
                     WarpProto.RegRequest.newBuilder()
                         .setHostname(Utils.getDeviceName(repository.appContext))
-                        .setIp(repository.currentIPStr ?: "").build()
+                        .setIp(repository.currentIPStr ?: "").build(),
                 )
 
             val lockedCert = resp.lockedCertBytes.toByteArray()
@@ -393,7 +385,7 @@ class RemoteWorker(
             try {
                 val haveDuplex = coroutineStub?.checkDuplexConnection(
                     WarpProto.LookupName.newBuilder().setId(repository.server.get().uuid)
-                        .setReadableName("Android").build()
+                        .setReadableName("Android").build(),
                 )?.response ?: false
 
                 if (haveDuplex) return true
@@ -416,7 +408,7 @@ class RemoteWorker(
             withTimeoutOrNull(10000) {
                 coroutineStub?.waitingForDuplex(
                     WarpProto.LookupName.newBuilder().setId(repository.server.get().uuid)
-                        .setReadableName(Utils.getDeviceName(repository.appContext)).build()
+                        .setReadableName(Utils.getDeviceName(repository.appContext)).build(),
                 )
             }?.response ?: false
         } catch (e: Exception) {
