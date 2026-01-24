@@ -48,7 +48,10 @@ fun WarpinatorApp(
                     },
                 ) {
                     composable("home") {
+                    }
 
+                    composable("about") {
+                        AboutScreen()
                     }
                 }
             }
