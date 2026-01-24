@@ -52,6 +52,7 @@
     <!--  Setting  -->
     <string name="identity_settings_category">Identity</string>
     <string name="transfer_setting_category">Transfer settings</string>
+    <string name="app_behavior_setting_category">App behavior</string>
     <string name="network_setting_category">Network</string>
     <string name="aspect_setting_category">Aspect</string>
     <string name="display_settings_title">Display name</string>
