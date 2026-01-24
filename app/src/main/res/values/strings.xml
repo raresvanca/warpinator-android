@@ -24,7 +24,6 @@
     <string name="devices_outside_group">Devices outside your group: %1$d</string>
     <string name="address_copied">Address copied to clipboard</string>
     <!--  Transfers activity  -->
-    <string name="waiting_for_permission">Waiting for permission…</string>
     <string name="files_overwritten_warning">(Files may be overwritten!)</string>
     <string name="remaining">remaining</string>
     <string name="open_failed">Failed to open received file</string>
@@ -33,7 +32,6 @@
     <string name="wrong_subnet">, not on the same subnet</string>
     <string name="errors_during_transfer">Errors during transfer:</string>
     <string name="dont_close_when_sharing">Closing this activity while sharing might cause the transfer to fail</string>
-    <string name="files_being_sent">Files being sent:</string>
     <string name="send_folder_toast">Select a folder to send</string>
     <string name="enter_message">Enter your message</string>
     <string name="message_hint">Your message</string>
@@ -101,6 +99,113 @@
     <string name="notification_channel_description">Persistent service notification</string>
     <string name="incoming_transfer_channel">Incoming transfer</string>
     <string name="transfer_progress_channel">Transfer progress</string>
+    <!--
+    Indicates the total number of files involved in a transfer.
+    Example: "1 file", "24 files"
+    -->
+    <plurals name="transfer_files_count">
+        <item quantity="one">%1$d file</item>
+        <item quantity="other">%1$d files</item>
+    </plurals>
+
+    <!--
+    Format used to show progress of a file transfer.
+    %1$s is the amount of data already transferred (e.g., "5.2 MB").
+    %2$s is the total size of the transfer (e.g., "10 MB").
+
+    Example: "5.2 MB / 10 MB"
+
+    Translators: You may change the separator (" / ") to match your locale's
+    standard for representing parts of a whole.
+    -->
+    <string name="transfer_short_status_fmt">%1$s / %2$s</string>
+    <!--
+    Format used to show progress of a file transfer and remaining time.
+    %1$s is the amount of data already transferred (e.g., "5.2 MB").
+    %2$s is the total size of the transfer (e.g., "10 MB").
+    %3$s is the current speed (e.g., "10kB/s").
+    %4$s is the remaining time label (e.g., "5m 30s remaining").
+
+    Example: "5.2 MB / 10 MB (10kB/s, 5m 30s remaining)"
+
+    Translators: You may change the separator (" / ") to match your locale's
+    standard for representing parts of a whole.
+    -->
+    <string name="transfer_long_status_fmt">%1$s / %2$s (%3$s, %4$s)</string>
+
+    <!--
+    Format used to represent the speed of a file transfer in a data size over
+    one second.
+    %1$s is the size (e.g., "15kB").
+
+    Example: "15kB/s"
+    -->
+    <string name="transfer_speed_fmt">%1$s/s</string>
+
+    <!--  A remaining time status that did not calculate yet or is indefinite  -->
+    <string name="time_indefinite">calculating...</string>
+
+    <!--  A remaining time status for when the time is estimated at more than 24h  -->
+    <string name="time_over_day">more than a day remaining</string>
+
+    <!--  A remaining time status for when the time is estimated at 5 seconds or less  -->
+    <string name="time_few_seconds_remaining">a few seconds remaining</string>
+
+    <!--
+    Format used to represent remaining seconds in a file transfer.
+    %1$d is the number of seconds remaining (e.g., "5").
+
+    Example: "5s remaining"
+
+    Translators: You may change the use of the "s" abbreviation and use full words if the
+    locale is not accommodated with "s"
+    -->
+    <plurals name="time_seconds_remaining">
+        <item quantity="one">%1$ds remaining</item>
+        <item quantity="other">%1$ds remaining</item>
+    </plurals>
+
+    <!--
+    Format used to represent remaining time in a file transfer in a BIG UNIT SMALLER UNIT
+    format.
+    %1$s is the big formatted unit (e.g., "5h", "20m").
+    %2$s is the small formatted unit (e.g., "30m", "5s").
+
+    Example: "30m 20s remaining", "5h 30m remaining"
+    -->
+    <string name="time_details_remaining_fmt">%1$s %2$s remaining</string>
+
+    <!--  Format for hours  -->
+    <plurals name="duration_hours_short">
+        <item quantity="one">%1$dh</item>
+        <item quantity="other">%1$dh</item>
+    </plurals>
+    <!--  Format for minutes  -->
+    <plurals name="duration_minutes_short">
+        <item quantity="one">%1$dm</item>
+        <item quantity="other">%1$dm</item>
+    </plurals>
+    <!--  Format for seconds  -->
+    <plurals name="duration_seconds_short">
+        <item quantity="one">%1$ds</item>
+        <item quantity="other">%1$ds</item>
+    </plurals>
+
+    <string name="transfer_direction_receive_short">Receiving</string>
+    <string name="transfer_direction_send_short">Sending</string>
+
+    <string name="transfer_state_init">Initializing</string>
+    <string name="transfer_state_waiting_permission">Waiting for permission…</string>
+    <string name="transfer_state_waiting_permission_overwrite_warning">Waiting for permission… (File will be overwritten)</string>
+    <string name="transfer_state_declined">Declined</string>
+    <string name="transfer_state_transferring">Transferring</string>
+    <string name="transfer_state_paused">Paused</string>
+    <string name="transfer_state_stopped">Stopped</string>
+    <string name="transfer_state_failed">Failed</string>
+    <string name="transfer_state_unrecoverable_failure">Unrecoverable failure</string>
+    <string name="transfer_state_file_not_found">File not found</string>
+    <string name="transfer_state_finished">Finished</string>
+    <string name="transfer_state_finished_with_errors">Finished with errors</string>
     <!--  Content descriptions  -->
     <string name="reconnect_button_cnt_des">Reconnect</string>
     <string name="status_image_cnt_des">Connection status</string>
@@ -115,7 +220,6 @@
     <string name="copy_button_cnt_des">Copy message</string>
     <string name="reset_cnt_des">Reset to default value</string>
     <string name="qr_code_cnt_des">QR code</string>
-    <!--  Other  -->
     <string name="please_select_download_dir">This is likely the first time you are launching this application.
         Please select a directory where you want Warpinator to save files into.</string>
     <string name="error_download_dir">You have to select a download directory in the settings</string>
@@ -134,24 +238,12 @@
     <string name="warning">Warning</string>
     <string name="warning_subnet">This device is not on the same subnet. Connecting to it is likely to fail.
         Please check in the settings of both devices that Warpinator is using the correct network interface.</string>
+    <string name="failed_to_save_profile_picture">Failed to save profile picture: %1$s</string>
     <string-array name="connected_states">
         <item>Connected</item>
         <item>Disconnected</item>
         <item>Connecting</item>
         <item>Connection failed</item>
         <item>Waiting for the other device to connect</item>
-    </string-array>
-    <string-array name="transfer_states">
-        <item>Initializing</item>
-        <item>Waiting for permission…</item>
-        <item>Declined</item>
-        <item>Transferring</item>
-        <item>Paused</item>
-        <item>Stopped</item>
-        <item>Failed (tap to view errors)</item>
-        <item>Unrecoverable failure</item>
-        <item>File not found</item>
-        <item>Finished</item>
-        <item>Finished with errors (tap to view)</item>
     </string-array>
 </resources>
