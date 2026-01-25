@@ -42,12 +42,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import slowscript.warpinator.R
 import slowscript.warpinator.app.LocalNavController
 import slowscript.warpinator.core.design.components.DynamicAvatarCircle
 import slowscript.warpinator.core.design.shapes.segmentedDynamicShapes
 import slowscript.warpinator.core.design.theme.WarpinatorTheme
+import slowscript.warpinator.core.model.preferences.ThemeOptions
 import slowscript.warpinator.core.network.Server
 import slowscript.warpinator.core.utils.ProfilePicturePainter
 import slowscript.warpinator.feature.settings.components.OptionsDialog
@@ -58,11 +59,10 @@ import slowscript.warpinator.feature.settings.components.TextInputDialog
 import slowscript.warpinator.feature.settings.state.SettingsEvent
 import slowscript.warpinator.feature.settings.state.SettingsUiState
 import slowscript.warpinator.feature.settings.state.SettingsViewModel
-import slowscript.warpinator.feature.settings.state.ThemeOptions
 
 @Composable
 fun SettingsScreen(
-    viewModel: SettingsViewModel = viewModel(), launchDirPicker: Boolean = false
+    viewModel: SettingsViewModel = hiltViewModel(), launchDirPicker: Boolean = false,
 ) {
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
@@ -76,7 +76,7 @@ fun SettingsScreen(
                     Toast.makeText(
                         context,
                         event.messageId,
-                        if (event.isLong) Toast.LENGTH_LONG else Toast.LENGTH_SHORT
+                        if (event.isLong) Toast.LENGTH_LONG else Toast.LENGTH_SHORT,
                     ).show()
                 }
 
@@ -84,7 +84,7 @@ fun SettingsScreen(
                     Toast.makeText(
                         context,
                         event.message,
-                        if (event.isLong) Toast.LENGTH_LONG else Toast.LENGTH_SHORT
+                        if (event.isLong) Toast.LENGTH_LONG else Toast.LENGTH_SHORT,
                     ).show()
                 }
             }
@@ -96,20 +96,20 @@ fun SettingsScreen(
             if (uri != null) {
                 context.contentResolver.takePersistableUriPermission(
                     uri,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
                 )
                 viewModel.setDirectory(uri)
             }
         }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia()
+        contract = ActivityResultContracts.PickVisualMedia(),
     ) { uri: Uri? ->
         if (uri != null) {
             // Take permission to read the file
             try {
                 context.contentResolver.takePersistableUriPermission(
-                    uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    uri, Intent.FLAG_GRANT_READ_URI_PERMISSION,
                 )
             } catch (_: Exception) {
                 // Ignore if specific permission grant fails (file might still be readable once)
@@ -145,7 +145,7 @@ fun SettingsScreen(
         onServerPortChange = viewModel::setServerPort,
         onAuthPortChange = viewModel::setAuthPort,
         onNetworkInterfaceChange = viewModel::setNetworkInterface,
-        onThemeChange = viewModel::updateTheme
+        onThemeChange = viewModel::updateTheme,
     )
 }
 
@@ -170,7 +170,7 @@ fun SettingsScreenContent(
     onServerPortChange: (String) -> Unit,
     onAuthPortChange: (String) -> Unit,
     onNetworkInterfaceChange: (String) -> Unit,
-    onThemeChange: (ThemeOptions) -> Unit
+    onThemeChange: (ThemeOptions) -> Unit,
 ) {
     val context = LocalContext.current
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -186,7 +186,7 @@ fun SettingsScreenContent(
     var showInterfaceDialog by remember { mutableStateOf(false) }
 
     fun openEdit(
-        titleRes: Int, currentValue: String, isNumber: Boolean = false, onConfirm: (String) -> Unit
+        titleRes: Int, currentValue: String, isNumber: Boolean = false, onConfirm: (String) -> Unit,
     ) {
         editDialogTitle = titleRes
         editDialogValue = currentValue
@@ -197,10 +197,11 @@ fun SettingsScreenContent(
 
     val listItemColors = ListItemDefaults.segmentedColors(
         containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-        disabledContainerColor = MaterialTheme.colorScheme.surfaceContainer
+        disabledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
     )
     Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection), topBar = {
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
             MediumFlexibleTopAppBar(
                 title = { Text(stringResource(R.string.settings)) },
 
@@ -212,7 +213,8 @@ fun SettingsScreenContent(
                 scrollBehavior = scrollBehavior,
 
                 )
-        }) { innerPadding ->
+        },
+    ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
                 .padding(horizontal = 16.dp)
@@ -227,15 +229,15 @@ fun SettingsScreenContent(
                     supportingContent = { Text(state.displayName) },
                     onClick = {
                         openEdit(
-                            R.string.display_settings_title, state.displayName
+                            R.string.display_settings_title, state.displayName,
                         ) { onDisplayNameChange(it) }
                     },
                     shapes = ListItemDefaults.segmentedDynamicShapes(0, 3),
                     colors = listItemColors,
-                    modifier = Modifier.padding(bottom = ListItemDefaults.SegmentedGap)
+                    modifier = Modifier.padding(bottom = ListItemDefaults.SegmentedGap),
                 )
                 val profilePictureBitmap = remember(
-                    state.profilePictureKey, state.profileImageSignature
+                    state.profilePictureKey, state.profileImageSignature,
                 ) { ProfilePicturePainter.getProfilePicture(state.profilePictureKey, context) }
                 SegmentedListItem(
                     content = { Text(stringResource(R.string.picture_settings_title)) },
@@ -247,7 +249,7 @@ fun SettingsScreenContent(
                     },
                     onClick = { showProfileDialog = true },
                     shapes = ListItemDefaults.segmentedDynamicShapes(2, 3),
-                    colors = listItemColors
+                    colors = listItemColors,
                 )
             }
 
@@ -260,7 +262,7 @@ fun SettingsScreenContent(
                     onClick = { onPickDownloadDir() },
                     trailingContent = {
                         AnimatedVisibility(
-                            visible = state.canResetDir, enter = fadeIn(), exit = fadeOut()
+                            visible = state.canResetDir, enter = fadeIn(), exit = fadeOut(),
                         ) {
                             IconButton(onClick = onResetDownloadDir) {
                                 Icon(Icons.Default.Restore, contentDescription = "Reset to default")
@@ -269,7 +271,7 @@ fun SettingsScreenContent(
                     },
                     shapes = ListItemDefaults.segmentedDynamicShapes(0, 3),
                     colors = listItemColors,
-                    modifier = Modifier.padding(bottom = ListItemDefaults.SegmentedGap)
+                    modifier = Modifier.padding(bottom = ListItemDefaults.SegmentedGap),
                 )
 
                 SwitchListItem(
@@ -357,12 +359,12 @@ fun SettingsScreenContent(
                     supportingContent = { Text(state.groupCode) },
                     onClick = {
                         openEdit(
-                            R.string.group_code_settings_title, state.groupCode
+                            R.string.group_code_settings_title, state.groupCode,
                         ) { onGroupCodeChange(it) }
                     },
                     shapes = ListItemDefaults.segmentedDynamicShapes(0, 3),
                     colors = listItemColors,
-                    modifier = Modifier.padding(bottom = ListItemDefaults.SegmentedGap)
+                    modifier = Modifier.padding(bottom = ListItemDefaults.SegmentedGap),
                 )
 
                 SegmentedListItem(
@@ -370,12 +372,12 @@ fun SettingsScreenContent(
                     supportingContent = { Text(state.port) },
                     onClick = {
                         openEdit(
-                            R.string.port_settings_title, state.port, isNumber = true
+                            R.string.port_settings_title, state.port, isNumber = true,
                         ) { onServerPortChange(it) }
                     },
                     shapes = ListItemDefaults.segmentedDynamicShapes(1, 3),
                     colors = listItemColors,
-                    modifier = Modifier.padding(bottom = ListItemDefaults.SegmentedGap)
+                    modifier = Modifier.padding(bottom = ListItemDefaults.SegmentedGap),
                 )
 
                 SegmentedListItem(
@@ -383,12 +385,12 @@ fun SettingsScreenContent(
                     supportingContent = { Text(state.authPort) },
                     onClick = {
                         openEdit(
-                            R.string.auth_port_settings_title, state.authPort, isNumber = true
+                            R.string.auth_port_settings_title, state.authPort, isNumber = true,
                         ) { onAuthPortChange(it) }
                     },
                     shapes = ListItemDefaults.segmentedDynamicShapes(1, 3),
                     colors = listItemColors,
-                    modifier = Modifier.padding(bottom = ListItemDefaults.SegmentedGap)
+                    modifier = Modifier.padding(bottom = ListItemDefaults.SegmentedGap),
                 )
 
                 SegmentedListItem(
@@ -396,9 +398,9 @@ fun SettingsScreenContent(
                     supportingContent = {
                         Text(
                             if (state.networkInterface != Server.NETWORK_INTERFACE_AUTO) stringResource(
-                                R.string.network_interface_settings_summary, state.networkInterface
+                                R.string.network_interface_settings_summary, state.networkInterface,
                             )
-                            else state.networkInterface
+                            else state.networkInterface,
                         )
                     },
                     onClick = { showInterfaceDialog = true },
@@ -449,7 +451,8 @@ fun SettingsScreenContent(
             onConfirm = { newVal ->
                 onEditConfirm(newVal)
                 showEditDialog = false
-            })
+            },
+        )
     } else if (showThemeDialog) {
         val values = ThemeOptions.entries
 
@@ -458,7 +461,8 @@ fun SettingsScreenContent(
             options = values.map { e -> stringResource(e.label) }.toList(),
             currentSelectionIndex = values.indexOf(state.themeMode),
             onDismiss = { showThemeDialog = false },
-            onOptionSelected = { idx -> onThemeChange(values[idx]) })
+            onOptionSelected = { idx -> onThemeChange(values[idx]) },
+        )
     } else if (showInterfaceDialog) {
         val options = state.interfaceEntries.map { it.first }
         val values = state.interfaceEntries.map { it.second }
@@ -468,7 +472,8 @@ fun SettingsScreenContent(
             options = options,
             currentSelectionIndex = values.indexOf(state.networkInterface),
             onDismiss = { showInterfaceDialog = false },
-            onOptionSelected = { idx -> onNetworkInterfaceChange(values[idx]) })
+            onOptionSelected = { idx -> onNetworkInterfaceChange(values[idx]) },
+        )
     }
 }
 
@@ -495,6 +500,7 @@ fun SettingsScreenPreview() {
             onServerPortChange = {},
             onAuthPortChange = {},
             onNetworkInterfaceChange = {},
-            onThemeChange = {})
+            onThemeChange = {},
+        )
     }
 }

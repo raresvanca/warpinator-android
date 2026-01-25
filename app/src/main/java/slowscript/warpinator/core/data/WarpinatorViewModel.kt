@@ -20,7 +20,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class WarpinatorViewModel @Inject constructor(
-    private val repository: WarpinatorRepository, private val server: Server,
+    val repository: WarpinatorRepository, private val server: Server,
 ) : ViewModel() {
     // UI States
     val remoteListState = repository.remoteListState.stateIn(

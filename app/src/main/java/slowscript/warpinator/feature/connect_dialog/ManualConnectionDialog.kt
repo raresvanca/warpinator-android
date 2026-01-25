@@ -84,14 +84,19 @@ import slowscript.warpinator.core.data.ManualConnectionResult
 import slowscript.warpinator.core.data.WarpinatorViewModel
 import slowscript.warpinator.core.design.shapes.segmentedDynamicShapes
 import slowscript.warpinator.core.design.theme.WarpinatorTheme
+import slowscript.warpinator.core.model.preferences.RecentRemote
 import slowscript.warpinator.core.utils.QRCodeBitmaps
 import slowscript.warpinator.core.utils.transformers.IPAddressTransformer
 import slowscript.warpinator.core.utils.transformers.ProtocolAddressInputValidator
 
 
-data class RecentRemote(
+data class RecentRemoteOption(
     val address: String, val fromClipboard: Boolean = false,
 )
+
+fun List<RecentRemote>.toRecentRemoteOptions(): List<RecentRemoteOption> {
+    return this.map { RecentRemoteOption("${it.hostname}@${it.host}", false) }
+}
 
 sealed interface ManualConnectionDialogState {
     data object QRCode : ManualConnectionDialogState
@@ -131,8 +136,12 @@ fun ManualConnectionDialog(
         }
 
         ManualConnectionDialogState.QuickSelect -> {
-            // TODO(raresvanca): implement actually loading the recent remotes from Preference Manager
-            QuickSelectRemoteDialog(clipboard, null, onDismiss) { address ->
+            val recentRemotes = viewModel.repository.prefs.recentRemotes
+            QuickSelectRemoteDialog(
+                clipboard,
+                recentRemotes.toRecentRemoteOptions(),
+                onDismiss,
+            ) { address ->
                 dialogState = ManualConnectionDialogState.Connecting(address)
             }
         }
@@ -141,7 +150,7 @@ fun ManualConnectionDialog(
             ConnectingToRemoteDialog(
                 onDismiss,
                 (dialogState as ManualConnectionDialogState.Connecting).address,
-                viewModel::connectToRemoteHost
+                viewModel::connectToRemoteHost,
             )
         }
     }
@@ -156,7 +165,7 @@ private fun ConnectingToRemoteDialog(
     forceState: ManualConnectionResult? = null,
 ) {
     val connectionResult by produceState(
-        initialValue = forceState, key1 = address
+        initialValue = forceState, key1 = address,
     ) {
         value = try {
             onTryRegisterWithHost(address)
@@ -173,7 +182,7 @@ private fun ConnectingToRemoteDialog(
                 .padding(top = 32.dp)
                 .size(124.dp),
             color = MaterialTheme.colorScheme.tertiaryContainer,
-            shape = MaterialShapes.Cookie9Sided.toShape()
+            shape = MaterialShapes.Cookie9Sided.toShape(),
         ) {
             Icon(
                 Icons.Rounded.PriorityHigh,
@@ -188,7 +197,7 @@ private fun ConnectingToRemoteDialog(
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.tertiary,
             modifier = Modifier.padding(top = 8.dp),
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
         )
     }
 
@@ -200,7 +209,7 @@ private fun ConnectingToRemoteDialog(
                 .padding(top = 32.dp)
                 .size(124.dp),
             color = MaterialTheme.colorScheme.errorContainer,
-            shape = MaterialShapes.SoftBurst.toShape()
+            shape = MaterialShapes.SoftBurst.toShape(),
         ) {
             Icon(
                 Icons.Rounded.PriorityHigh,
@@ -215,7 +224,7 @@ private fun ConnectingToRemoteDialog(
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.error,
             modifier = Modifier.padding(top = 8.dp),
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
         )
 
         if (errorDetails != null) Text(
@@ -223,7 +232,7 @@ private fun ConnectingToRemoteDialog(
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.error.copy(alpha = 0.9f),
             modifier = Modifier.padding(top = 8.dp),
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
         )
     }
 
@@ -235,7 +244,7 @@ private fun ConnectingToRemoteDialog(
                 .padding(top = 32.dp)
                 .size(124.dp),
             color = MaterialTheme.colorScheme.primary,
-            shape = MaterialShapes.Cookie9Sided.toShape()
+            shape = MaterialShapes.Cookie9Sided.toShape(),
         ) {
             Icon(
                 Icons.Rounded.Done,
@@ -261,7 +270,7 @@ private fun ConnectingToRemoteDialog(
         text = {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(
                     address,
@@ -278,7 +287,7 @@ private fun ConnectingToRemoteDialog(
                     is ManualConnectionResult.Error -> {
                         errorContainer(
                             "Connection failed",
-                            (connectionResult as ManualConnectionResult.Error).message
+                            (connectionResult as ManualConnectionResult.Error).message,
                         )
 
                     }
@@ -363,18 +372,18 @@ private fun QRCodeDialog(
                             )
                             .clip(RoundedCornerShape(24.dp))
                             .clickable(
-                                onClick = copyUrl
-                            )
+                                onClick = copyUrl,
+                            ),
                     ) {
                         Image(
                             it,
                             contentDescription = "QR Code of a connection URL",
                             colorFilter = BlendModeColorFilter(
-                                MaterialTheme.colorScheme.primary, BlendMode.SrcIn
+                                MaterialTheme.colorScheme.primary, BlendMode.SrcIn,
                             ),
                             contentScale = ContentScale.FillHeight,
                             filterQuality = FilterQuality.None, // Force image to be crisp
-                            modifier = Modifier.padding(16.dp)
+                            modifier = Modifier.padding(16.dp),
                         )
                     }
                 }
@@ -382,7 +391,7 @@ private fun QRCodeDialog(
                     stringResource(R.string.manual_connect_text),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Justify
+                    textAlign = TextAlign.Justify,
                 )
 
                 TextButton(
@@ -390,16 +399,16 @@ private fun QRCodeDialog(
                     modifier = Modifier.padding(top = 12.dp),
                     colors = ButtonDefaults.textButtonColors(
                         contentColor = MaterialTheme.colorScheme.onSurface,
-                    )
+                    ),
 
-                ) {
+                    ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(address)
                         Spacer(Modifier.width(ButtonDefaults.IconSpacing))
                         Icon(
                             Icons.Rounded.ContentCopy,
                             null,
-                            modifier = Modifier.size(ButtonDefaults.IconSize)
+                            modifier = Modifier.size(ButtonDefaults.IconSize),
                         )
                     }
                 }
@@ -412,7 +421,7 @@ private fun QRCodeDialog(
 @Composable
 private fun QuickSelectRemoteDialog(
     clipboard: Clipboard,
-    recentRemotes: List<RecentRemote>?,
+    recentRemotes: List<RecentRemoteOption>?,
     onDismiss: () -> Unit,
     onStartConnection: (String) -> Unit,
 ) {
@@ -423,7 +432,7 @@ private fun QuickSelectRemoteDialog(
     val validAddressSelected by remember {
         derivedStateOf {
             textFieldState.text.isNotEmpty() && ProtocolAddressInputValidator.isValidIp(
-                textFieldState.text.toString(), false
+                textFieldState.text.toString(), false,
             )
         }
     }
@@ -441,7 +450,7 @@ private fun QuickSelectRemoteDialog(
         clipText = clipText.removePrefix(ProtocolAddressInputValidator.scheme)
         if (!ProtocolAddressInputValidator.isValidIp(clipText, false)) return@LaunchedEffect
 
-        recentRemotes.add(0, RecentRemote(clipText, true))
+        recentRemotes.add(0, RecentRemoteOption(clipText, true))
     }
 
     val onSubmit = {
@@ -482,14 +491,15 @@ private fun QuickSelectRemoteDialog(
                     },
                     lineLimits = TextFieldLineLimits.SingleLine,
                     keyboardOptions = KeyboardOptions(
-                        imeAction = ImeAction.Done, keyboardType = KeyboardType.Unspecified
+                        imeAction = ImeAction.Done, keyboardType = KeyboardType.Unspecified,
                     ),
                     inputTransformation = ProtocolAddressInputValidator(),
                     outputTransformation = IPAddressTransformer(MaterialTheme.colorScheme.onSurfaceVariant),
                     onKeyboardAction = { performDefaultAction ->
                         onSubmit()
                         performDefaultAction()
-                    })
+                    },
+                )
 
                 Text(
                     "Recent remotes",
@@ -497,7 +507,7 @@ private fun QuickSelectRemoteDialog(
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier
                         .padding(top = 16.dp)
-                        .fillMaxWidth()
+                        .fillMaxWidth(),
                 )
 
                 if (recentRemotes.isEmpty()) {
@@ -507,7 +517,7 @@ private fun QuickSelectRemoteDialog(
                         modifier = Modifier
                             .padding(vertical = 16.dp)
                             .size(32.dp),
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = MaterialTheme.colorScheme.primary,
                     )
                     Text("No recent remotes", style = MaterialTheme.typography.titleSmall)
                 } else {
@@ -517,18 +527,19 @@ private fun QuickSelectRemoteDialog(
                 recentRemotes.forEachIndexed { index, remote ->
 
                     RecentRemoteSegmentedListTile(
-                        textFieldState, remote, index, recentRemotes.size
+                        textFieldState, remote, index, recentRemotes.size,
                     )
                 }
             }
 
-        })
+        },
+    )
 }
 
 @Composable
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 private fun RecentRemoteSegmentedListTile(
-    textFieldState: TextFieldState, remote: RecentRemote, index: Int, listCount: Int,
+    textFieldState: TextFieldState, remote: RecentRemoteOption, index: Int, listCount: Int,
 ) {
     SegmentedListItem(
         onClick = {
@@ -546,7 +557,8 @@ private fun RecentRemoteSegmentedListTile(
                         append(":")
                         append(sections[1])
                     }
-                })
+                },
+            )
         },
         modifier = Modifier
             .fillMaxWidth()
@@ -572,7 +584,8 @@ fun ManualConnectionDialogPreview() {
                     address = "192.168.0.100:100",
                     onDismiss = {},
                     clipboard = LocalClipboard.current,
-                    onShowQuickSelectDialog = {})
+                    onShowQuickSelectDialog = {},
+                )
             }
         }
     }
@@ -588,7 +601,8 @@ fun ManualConnectionQuickSelectDialogPreview() {
                     clipboard = LocalClipboard.current,
                     onDismiss = {},
                     recentRemotes = listOf(),
-                    onStartConnection = {})
+                    onStartConnection = {},
+                )
             }
         }
     }
@@ -601,11 +615,14 @@ fun ManualConnectionQuickSelectRecentsDialogPreview() {
         Scaffold { innerPadding ->
             Box(modifier = Modifier.padding(innerPadding)) {
                 QuickSelectRemoteDialog(
-                    clipboard = LocalClipboard.current, onDismiss = {}, recentRemotes = listOf(
-                        RecentRemote("192.168.0.90:42001", true),
-                        RecentRemote("192.168.0.89:42001"),
-                        RecentRemote("192.168.0.233:42002")
-                    ), onStartConnection = {})
+                    clipboard = LocalClipboard.current, onDismiss = {},
+                    recentRemotes = listOf(
+                        RecentRemoteOption("192.168.0.90:42001", true),
+                        RecentRemoteOption("192.168.0.89:42001"),
+                        RecentRemoteOption("192.168.0.233:42002"),
+                    ),
+                    onStartConnection = {},
+                )
             }
         }
     }
@@ -618,7 +635,7 @@ class ConnectionResultProvider : PreviewParameterProvider<ManualConnectionResult
         ManualConnectionResult.Error("Timed out after 5000ms"),
         ManualConnectionResult.AlreadyConnected,
         ManualConnectionResult.NotOnSameSubnet,
-        ManualConnectionResult.RemoteDoesNotSupportManualConnect
+        ManualConnectionResult.RemoteDoesNotSupportManualConnect,
     )
 
     override fun getDisplayName(index: Int): String? {
@@ -645,7 +662,8 @@ fun ManualConnectionConnectingToDialogPreview(
                     address = "192.168.0.100",
                     forceState = result,
                     onDismiss = {},
-                    onTryRegisterWithHost = { result })
+                    onTryRegisterWithHost = { result },
+                )
             }
         }
     }

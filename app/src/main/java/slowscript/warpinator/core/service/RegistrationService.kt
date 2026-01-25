@@ -90,7 +90,7 @@ class RegistrationService() : WarpRegistrationImplBase() {
                 port = req.port,
                 serviceName = req.serviceId,
                 staticService = true,
-                isFavorite = repository.favouritesState.value.contains(SavedFavourite(req.serviceId)),
+                isFavorite = repository.prefs.favourites.contains(SavedFavourite(req.serviceId)),
             )
             scope.launch { server.addRemote(r) }
         }

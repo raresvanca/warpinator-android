@@ -277,7 +277,7 @@ class Server @Inject constructor(
                 val resp = WarpRegistrationGrpc.newBlockingStub(channel)
                     .registerService(serviceRegistrationMsg)
                 Log.d(TAG, "registerWithHost: registration sent")
-//                addRecentRemote(host, resp.getHostname())
+                repository.prefs.addRecentRemote(host, resp.hostname)
 
                 var r: Remote? = repository.remoteListState.value.find { it.uuid == resp.serviceId }
                 val newRemote = r == null
@@ -286,7 +286,7 @@ class Server @Inject constructor(
                     r = Remote(
                         uuid = resp.serviceId,
                         address = null,
-                        isFavorite = repository.favouritesState.value.contains(
+                        isFavorite = repository.prefs.favourites.contains(
                             SavedFavourite(resp.serviceId),
                         ),
                     )
@@ -557,7 +557,7 @@ class Server @Inject constructor(
                     api = newApiVersion,
                     serviceAvailable = true,
                     serviceName = svcName,
-                    isFavorite = repository.favouritesState.value.contains(SavedFavourite(svcName)),
+                    isFavorite = repository.prefs.favourites.contains(SavedFavourite(svcName)),
                     status = RemoteStatus.Disconnected,
                 )
 

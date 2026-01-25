@@ -17,11 +17,9 @@ import kotlinx.coroutines.launch
 import slowscript.warpinator.core.model.Remote
 import slowscript.warpinator.core.model.Remote.RemoteStatus
 import slowscript.warpinator.core.model.Transfer
-import slowscript.warpinator.core.model.preferences.RecentRemote
-import slowscript.warpinator.core.model.preferences.SavedFavourite
 import slowscript.warpinator.core.service.RemotesManager
 import slowscript.warpinator.core.service.TransfersManager
-import slowscript.warpinator.core.utils.PreferenceManager
+import slowscript.warpinator.core.system.PreferenceManager
 import slowscript.warpinator.core.utils.Utils.IPInfo
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -37,8 +35,6 @@ class WarpinatorRepository @Inject constructor(
     private val _remoteListState = MutableStateFlow<List<Remote>>(emptyList())
     private val _serviceState = MutableStateFlow<ServiceState>(ServiceState.Starting)
     private val _networkState = MutableStateFlow(NetworkState())
-    private val _favouritesState = MutableStateFlow<Set<SavedFavourite>>(emptySet())
-    private val _recentRemotesState = MutableStateFlow<List<RecentRemote>>(emptyList())
     private val _refreshing = MutableStateFlow(false)
     private val _statusMessages = MutableSharedFlow<String>(
         replay = 0, // Don't replay old messages to new subscribers
@@ -50,12 +46,10 @@ class WarpinatorRepository @Inject constructor(
     val remoteListState = _remoteListState.asStateFlow()
     val serviceState = _serviceState.asStateFlow()
     val networkState = _networkState.asStateFlow()
-    val favouritesState = _favouritesState.asStateFlow()
-    val recentRemotesState = _recentRemotesState.asStateFlow()
     val refreshingState = _refreshing.asStateFlow()
     val statusMessages = _statusMessages.asSharedFlow()
 
-    val prefs = PreferenceManager(appContext, favouritesState, recentRemotesState)
+    val prefs = PreferenceManager(appContext)
 
     // Service variables
     var currentIPInfo: IPInfo? = null
@@ -132,18 +126,7 @@ class WarpinatorRepository @Inject constructor(
 
     fun toggleFavorite(uuid: String) {
         updateRemote(uuid) {
-            val favorite = !it.isFavorite
-            // Persist changes
-            if (favorite) {
-//                Server.current.favorites.add(uuid)
-            } else {
-//                Server.current.favorites.remove(uuid)
-            }
-//            Server.current.saveFavorites()
-
-
-            // TODO: Migrate to the use of PreferenceManager
-            it.copy(isFavorite = favorite)
+            it.copy(isFavorite = prefs.toggleFavorite(uuid))
         }
     }
 
