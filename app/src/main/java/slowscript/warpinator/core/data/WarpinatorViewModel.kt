@@ -60,6 +60,13 @@ class WarpinatorViewModel @Inject constructor(
         }
     }
 
+    fun reconnect(remote: Remote) {
+        viewModelScope.launch {
+            repository.remotesManager.get().getWorker(remote.uuid)?.connect(remote)
+        }
+    }
+
+
     fun rescan() {
         server.rescan()
     }

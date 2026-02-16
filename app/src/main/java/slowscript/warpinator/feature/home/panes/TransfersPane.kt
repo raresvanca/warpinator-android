@@ -25,10 +25,12 @@ import androidx.compose.material.icons.rounded.Inbox
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.StarBorder
 import androidx.compose.material.icons.rounded.SyncAlt
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItemDefaults
@@ -38,7 +40,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -82,6 +83,7 @@ fun TransfersPane(
         },
         onClearTransfer = viewModel::clearTransfer,
         onClearTransfers = viewModel::clearAllFinished,
+        onReconnect = viewModel::reconnect,
     )
 }
 
@@ -102,6 +104,7 @@ private fun TransferPaneContent(
     onItemOpen: (Transfer) -> Unit = {},
     onClearTransfer: (Transfer) -> Unit = {},
     onClearTransfers: (String) -> Unit = {},
+    onReconnect: (Remote) -> Unit = {},
 ) {
     val filePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenMultipleDocuments(),
@@ -134,17 +137,6 @@ private fun TransferPaneContent(
                 },
                 isFavoriteOverride = isFavoriteOverride,
                 actions = {
-                    // Reconnect Button Logic
-                    if (remote.status == Remote.RemoteStatus.Disconnected || remote.status is Remote.RemoteStatus.Error) {
-                        TextButton(
-                            onClick = {
-//                            remote.connect()
-                            },
-                        ) {
-                            Text("Reconnect")
-                        }
-                    }
-
                     TooltipIconButton(
                         onClick = {
                             onClearTransfers(remote.uuid)
@@ -188,7 +180,7 @@ private fun TransferPaneContent(
         ) {
 
             item {
-                ConnectionStatusCard(remote.status, transfers.size)
+                ConnectionStatusCard(remote.status, transfers.size) { onReconnect(remote) }
             }
 
             if (transfers.isEmpty()) {
@@ -247,6 +239,7 @@ private fun TransferPaneContent(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 private fun ConnectionStatusCard(
     status: Remote.RemoteStatus, transfersCount: Int,
+    onReconnect: () -> Unit,
 ) {
     Card(
         modifier = Modifier
@@ -319,6 +312,23 @@ private fun ConnectionStatusCard(
                     style = MaterialTheme.typography.labelLarge,
                     color = LocalContentColor.current.copy(alpha = 0.8f),
                 )
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+            
+            if (status == Remote.RemoteStatus.Disconnected || status is Remote.RemoteStatus.Error) {
+                FilledTonalButton(
+                    modifier = Modifier.padding(horizontal = 8.dp),
+                    colors = if (status is Remote.RemoteStatus.Error) ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError,
+                    ) else ButtonDefaults.filledTonalButtonColors(),
+                    onClick = {
+                        onReconnect()
+                    },
+                ) {
+                    Text("Reconnect")
+                }
             }
         }
     }
@@ -509,17 +519,17 @@ private fun ConnectionStatusCardPreview() {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             ConnectionStatusCard(
                 status = Remote.RemoteStatus.Connecting, transfersCount = 3,
-            )
+            ) {}
             ConnectionStatusCard(
                 status = Remote.RemoteStatus.Connected, transfersCount = 5,
-            )
+            ) {}
             ConnectionStatusCard(
                 status = Remote.RemoteStatus.Disconnected, transfersCount = 5,
-            )
+            ) {}
             ConnectionStatusCard(
                 status = Remote.RemoteStatus.Error(message = "Connection failed"),
                 transfersCount = 2,
-            )
+            ) {}
         }
     }
 }
