@@ -19,6 +19,7 @@ import slowscript.warpinator.WarpGrpcKt
 import slowscript.warpinator.WarpProto
 import slowscript.warpinator.WarpRegistrationGrpc
 import slowscript.warpinator.core.data.WarpinatorRepository
+import slowscript.warpinator.core.model.Message
 import slowscript.warpinator.core.model.Remote
 import slowscript.warpinator.core.model.Transfer
 import slowscript.warpinator.core.network.Authenticator
@@ -148,6 +149,7 @@ class RemoteWorker(
                 repository.updateRemote(uuid) { remote ->
                     remote.copy(
                         displayName = info.displayName, userName = info.userName,
+                        supportsTextMessages = (info.featureFlags and Remote.RemoteFeatures.TEXT_MESSAGES) != 0,
                     )
                 }
             }
@@ -260,6 +262,29 @@ class RemoteWorker(
         // This might throw, caller (TransferWorker) must handle exceptions
         return coroutineStub!!.startTransfer(info)
     }
+
+    fun sendTextMessage(text: String) {
+        val message = WarpProto.TextMessage.newBuilder().setIdent(server.uuid)
+            .setTimestamp(System.currentTimeMillis()).setMessage(text).build()
+
+        repository.addRemoteMessage(
+            uuid,
+            Message(uuid, Transfer.Direction.Send, System.currentTimeMillis(), text),
+        )
+
+        repository.applicationScope.launch {
+            try {
+                coroutineStub?.sendTextMessage(message)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to send message", e)
+            }
+        }
+    }
+
+    fun onReceiveMessage(message: Message) {
+        repository.addRemoteMessage(uuid, message, true)
+    }
+
 
     fun declineTransfer(t: Transfer) {
         val info = WarpProto.OpInfo.newBuilder().setIdent(server.uuid).setTimestamp(t.startTime)

@@ -190,4 +190,19 @@ class WarpinatorViewModel @Inject constructor(
             }
         }
     }
+
+    fun sendTextMessage(remote: Remote, message: String) {
+        repository.applicationScope.launch {
+
+            repository.remotesManager.get().getWorker(remote.uuid)?.sendTextMessage(message)
+        }
+    }
+
+    fun markTextMessagesAsRead(remote: Remote) {
+        repository.applicationScope.launch {
+            repository.updateRemote(
+                remote.uuid,
+            ) { remote -> remote.copy(hasUnreadMessages = false) }
+        }
+    }
 }

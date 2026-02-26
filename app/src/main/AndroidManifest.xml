@@ -53,7 +53,8 @@
             android:name=".app.MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
-            android:theme="@style/Theme.Warpinator">
+            android:theme="@style/Theme.Warpinator"
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

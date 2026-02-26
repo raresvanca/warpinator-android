@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import slowscript.warpinator.core.model.Message
 import slowscript.warpinator.core.model.Remote
 import slowscript.warpinator.core.model.Remote.RemoteStatus
 import slowscript.warpinator.core.model.Transfer
@@ -221,6 +222,17 @@ class WarpinatorRepository @Inject constructor(
             }
 
             remote.copy(transfers = activeTransfers)
+        }
+    }
+
+    // Message methods
+    fun addRemoteMessage(remoteUuid: String, message: Message, markUnread: Boolean = false) {
+        updateRemote(remoteUuid) { remote ->
+            val existingMessages = remote.messages.filterNot { it.timestamp == message.timestamp }
+            remote.copy(
+                messages = listOf(message) + existingMessages,
+                hasUnreadMessages = remote.hasUnreadMessages || markUnread,
+            )
         }
     }
 }

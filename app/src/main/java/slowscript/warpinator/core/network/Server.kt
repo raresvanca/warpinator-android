@@ -588,5 +588,6 @@ class Server @Inject constructor(
         private const val TAG = "SRV"
         const val SERVICE_TYPE: String = "_warpinator._tcp.local."
         const val NETWORK_INTERFACE_AUTO: String = "auto"
+        const val SERVER_FEATURES = Remote.RemoteFeatures.TEXT_MESSAGES
     }
 }

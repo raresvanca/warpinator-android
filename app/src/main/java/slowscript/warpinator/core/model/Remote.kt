@@ -22,8 +22,12 @@ data class Remote(
     val hasErrorReceiveCert: Boolean = false,
 
     val transfers: List<Transfer> = emptyList(),
+    val messages: List<Message> = emptyList(),
 
-    val isFavorite: Boolean
+    val supportsTextMessages: Boolean = false,
+    val hasUnreadMessages: Boolean = false,
+
+    val isFavorite: Boolean,
 ) {
     sealed interface RemoteStatus {
         data object Connected : RemoteStatus
@@ -35,9 +39,13 @@ data class Remote(
             val hasGroupCodeException: Boolean = false,
             val isCertificateUnreceived: Boolean = false,
             val isDuplexFailed: Boolean = false,
-            val hasUsernameException: Boolean = false
+            val hasUsernameException: Boolean = false,
         ) : RemoteStatus
 
         data object AwaitingDuplex : RemoteStatus
+    }
+
+    object RemoteFeatures {
+        const val TEXT_MESSAGES = 1
     }
 }

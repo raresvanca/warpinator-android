@@ -16,6 +16,7 @@ import slowscript.warpinator.WarpProto.RemoteMachineAvatar
 import slowscript.warpinator.WarpProto.RemoteMachineInfo
 import slowscript.warpinator.WarpProto.StopInfo
 import slowscript.warpinator.core.data.WarpinatorRepository
+import slowscript.warpinator.core.model.Message
 import slowscript.warpinator.core.model.Remote
 import slowscript.warpinator.core.model.Transfer
 import slowscript.warpinator.core.network.Server
@@ -87,7 +88,7 @@ class GrpcService(
 
     override suspend fun getRemoteMachineInfo(request: LookupName): RemoteMachineInfo {
         return RemoteMachineInfo.newBuilder().setDisplayName(server.displayName)
-            .setUserName("android").build()
+            .setUserName("android").setFeatureFlags(Server.SERVER_FEATURES).build()
     }
 
     override fun getRemoteMachineAvatar(request: LookupName): Flow<RemoteMachineAvatar> = flow {
@@ -126,6 +127,19 @@ class GrpcService(
 
     override suspend fun pauseTransferOp(request: OpInfo): WarpProto.VoidType {
         return super.pauseTransferOp(request)
+    }
+
+    override suspend fun sendTextMessage(request: WarpProto.TextMessage): WarpProto.VoidType {
+        Log.d(TAG, "sendTextMessage from " + request.getIdent() + ": " + request.getMessage())
+        val message = Message(
+            remoteUuid = request.ident,
+            direction = Transfer.Direction.Receive,
+            timestamp = request.timestamp,
+            text = request.message,
+        )
+
+        remotesManager.getWorker(request.ident)?.onReceiveMessage(message)
+        return super.sendTextMessage(request)
     }
 
     override fun startTransfer(request: OpInfo): Flow<WarpProto.FileChunk> {
