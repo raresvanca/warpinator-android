@@ -56,7 +56,7 @@ import slowscript.warpinator.core.data.WarpinatorViewModel
 import slowscript.warpinator.core.design.shapes.WarpinatorRoundedIconOutlineShape
 import slowscript.warpinator.core.design.theme.WarpinatorTheme
 import slowscript.warpinator.core.model.Remote
-import slowscript.warpinator.feature.connect_dialog.ManualConnectionDialog
+import slowscript.warpinator.feature.manual_connection.ManualConnectionDialog
 import slowscript.warpinator.feature.home.components.HomeMenu
 import slowscript.warpinator.feature.home.components.RemoteListItem
 

@@ -82,9 +82,15 @@ class WarpinatorViewModel @Inject constructor(
             val contentResolver = repository.appContext.contentResolver
 
             for (uri in uris) {
-                contentResolver.takePersistableUriPermission(
-                    uri, Intent.FLAG_GRANT_READ_URI_PERMISSION,
-                )
+                try {
+                    contentResolver.takePersistableUriPermission(
+                        uri, Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                    )
+                } catch (
+                    _: SecurityException, ) {
+                    // Silent catch situations where the Uri provider didn't give a persistable uri
+                }
+
             }
             repository.transfersManager.get().initiateSend(remote, uris, isDir)
         }

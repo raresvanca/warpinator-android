@@ -1,4 +1,4 @@
-package slowscript.warpinator.feature.connect_dialog
+package slowscript.warpinator.feature.manual_connection
 
 import android.content.ClipData
 import android.graphics.Bitmap

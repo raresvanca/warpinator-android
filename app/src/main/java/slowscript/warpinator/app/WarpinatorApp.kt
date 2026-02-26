@@ -17,7 +17,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import slowscript.warpinator.feature.about.AboutScreen
-import slowscript.warpinator.feature.connect_dialog.ProtocolLaunchEffect
 import slowscript.warpinator.feature.home.HomeScreen
 import slowscript.warpinator.feature.settings.SettingsScreen
 
@@ -32,7 +31,7 @@ fun WarpinatorApp(
     Surface(color = MaterialTheme.colorScheme.surface) {
         CompositionLocalProvider(LocalNavController provides navController) {
             Box(Modifier.fillMaxSize()) {
-                ProtocolLaunchEffect()
+                WarpinatorIntentHandler()
 
                 NavHost(
                     navController = navController, startDestination = "home",
