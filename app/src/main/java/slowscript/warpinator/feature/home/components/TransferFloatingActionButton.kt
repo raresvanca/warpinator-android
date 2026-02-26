@@ -5,6 +5,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.FilePresent
 import androidx.compose.material.icons.rounded.Folder
+import androidx.compose.material.icons.rounded.ModeComment
 import androidx.compose.material.icons.rounded.Upload
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingActionButtonMenu
@@ -34,7 +35,10 @@ import androidx.compose.ui.tooling.preview.Preview
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun TransferFloatingActionButton(
-    onSendFolder: () -> Unit, onSendFile: () -> Unit, initiallyExpanded: Boolean = false,
+    onSendFolder: () -> Unit,
+    onSendFile: () -> Unit,
+    onSendMessage: () -> Unit = {},
+    initiallyExpanded: Boolean = false,
 ) {
     var isMenuExpanded by rememberSaveable { mutableStateOf(initiallyExpanded) }
     val haptics = LocalHapticFeedback.current
@@ -68,6 +72,11 @@ fun TransferFloatingActionButton(
             }
         },
     ) {
+        FloatingActionButtonMenuItem(
+            onClick = onSendMessage,
+            text = { Text("Send Message") },
+            icon = { Icon(Icons.Rounded.ModeComment, contentDescription = "Send Message") },
+        )
         FloatingActionButtonMenuItem(
             onClick = onSendFolder,
             text = { Text("Send Folder") },

@@ -3,6 +3,8 @@ package slowscript.warpinator.feature.home
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -26,20 +28,24 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import slowscript.warpinator.core.data.WarpinatorViewModel
 import slowscript.warpinator.core.model.ui.RemoteRoute
+import slowscript.warpinator.feature.home.panes.MessagesPane
 import slowscript.warpinator.feature.home.panes.RemoteListPane
 import slowscript.warpinator.feature.home.panes.TransfersPane
 
-@OptIn(ExperimentalMaterial3AdaptiveApi::class)
+@OptIn(
+    ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3Api::class,
+    ExperimentalMaterial3ExpressiveApi::class,
+)
 @Composable
 fun HomeScreen(
     viewModel: WarpinatorViewModel = hiltViewModel(),
 ) {
-    // The Navigator controls the "Two Pane" logic automatically
+    // The Navigator controls the three panes logic automatically
     val navigator = rememberListDetailPaneScaffoldNavigator<RemoteRoute>(
         scaffoldDirective = calculatePaneScaffoldDirective(
             currentWindowAdaptiveInfo(),
         ).copy(
-            // This removes the gap between the list and detail panes
+            // This removes the gap between the panes
             horizontalPartitionSpacerSize = 0.dp,
         ),
     )
@@ -47,9 +53,10 @@ fun HomeScreen(
 
     // If structure changes (List -> Detail), allow back. If content changes in Detail, don't pop.
     val backBehavior = BackNavigationBehavior.PopUntilScaffoldValueChange
-    val paneMode =
+    val secondaryPaneMode =
         (navigator.scaffoldValue.primary == PaneAdaptedValue.Expanded) && (navigator.scaffoldValue.secondary == PaneAdaptedValue.Expanded)
-
+    val tertiaryPaneMode =
+        (navigator.scaffoldValue.primary == PaneAdaptedValue.Expanded) && (navigator.scaffoldValue.tertiary == PaneAdaptedValue.Expanded)
 
     Surface(color = MaterialTheme.colorScheme.surface) {
         NavigableListDetailPaneScaffold(
@@ -66,13 +73,14 @@ fun HomeScreen(
                                 )
                             }
                         },
-                        paneMode = paneMode,
+                        paneMode = secondaryPaneMode,
                         onFavoriteToggle = { remote -> viewModel.toggleFavorite(remote.uuid) },
                     )
 
                 }
             },
             detailPane = {
+
                 AnimatedPane {
                     val selectedUuid = navigator.currentDestination?.contentKey?.uuid
 
@@ -82,9 +90,17 @@ fun HomeScreen(
                     if (selectedRemote != null) {
                         TransfersPane(
                             remote = selectedRemote!!,
-                            paneMode = paneMode,
+                            paneMode = secondaryPaneMode,
                             onBack = { scope.launch { navigator.navigateBack(backBehavior) } },
                             onFavoriteToggle = { remote -> viewModel.toggleFavorite(selectedRemote!!.uuid) },
+                            onOpenMessagesPane = {
+                                scope.launch {
+                                    navigator.navigateTo(
+                                        ListDetailPaneScaffoldRole.Extra,
+                                        RemoteRoute(selectedRemote!!.uuid),
+                                    )
+                                }
+                            },
                         )
                     } else {
                         // Placeholder for Tablet Landscape when no device is selected
@@ -95,6 +111,23 @@ fun HomeScreen(
                                 color = MaterialTheme.colorScheme.onSurface,
                             )
                         }
+                    }
+                }
+            },
+            extraPane = {
+                AnimatedPane {
+                    val selectedUuid = navigator.currentDestination?.contentKey?.uuid
+                    val selectedRemote by viewModel.getRemote(selectedUuid)
+                        .collectAsStateWithLifecycle(initialValue = null)
+
+                    if (selectedRemote?.supportsTextMessages == true) {
+                        MessagesPane(
+                            remote = selectedRemote!!,
+                            paneMode = tertiaryPaneMode,
+                            onBack = { scope.launch { navigator.navigateBack(backBehavior) } },
+                        )
+                    } else {
+                        Box(Modifier.fillMaxSize()) {}
                     }
                 }
             },

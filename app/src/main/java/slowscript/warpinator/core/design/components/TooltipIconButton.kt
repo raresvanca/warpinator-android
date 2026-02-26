@@ -1,9 +1,12 @@
 package slowscript.warpinator.core.design.components
 
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TooltipAnchorPosition
@@ -23,7 +26,8 @@ fun TooltipIconButton(
     enabled: Boolean = true,
     onClick: () -> Unit,
     icon: ImageVector,
-    tint: Color = LocalContentColor.current,
+    tint: Color = if (enabled) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.38f),
+    addBadge: Boolean = false,
 ) {
     TooltipBox(
         positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Below),
@@ -31,9 +35,19 @@ fun TooltipIconButton(
         state = rememberTooltipState(),
     ) {
         IconButton(onClick = onClick, enabled = enabled, modifier = modifier) {
-            Icon(
-                icon, contentDescription = description, tint = tint,
-            )
+            BadgedBox(
+                badge = {
+                    if (addBadge) {
+                        Badge(containerColor = MaterialTheme.colorScheme.tertiary)
+                    }
+                },
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = description,
+                    tint = tint,
+                )
+            }
         }
     }
 }

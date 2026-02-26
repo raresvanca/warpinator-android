@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.Message
 import androidx.compose.material.icons.rounded.ClearAll
 import androidx.compose.material.icons.rounded.Error
 import androidx.compose.material.icons.rounded.Inbox
@@ -64,7 +65,11 @@ import slowscript.warpinator.feature.home.components.TransferListItem
 
 @Composable
 fun TransfersPane(
-    remote: Remote, paneMode: Boolean, onBack: () -> Unit, onFavoriteToggle: (Remote) -> Unit,
+    remote: Remote,
+    paneMode: Boolean,
+    onBack: () -> Unit,
+    onOpenMessagesPane: () -> Unit,
+    onFavoriteToggle: (Remote) -> Unit,
     viewModel: WarpinatorViewModel = hiltViewModel(),
 ) {
 
@@ -72,6 +77,7 @@ fun TransfersPane(
         remote = remote,
         paneMode = paneMode,
         onBack = onBack,
+        onOpenMessagesPane = onOpenMessagesPane,
         onFavoriteToggle = onFavoriteToggle,
         onAcceptTransfer = viewModel::acceptTransfer,
         onDeclineTransfer = viewModel::declineTransfer,
@@ -93,7 +99,8 @@ fun TransfersPane(
 private fun TransferPaneContent(
     remote: Remote,
     paneMode: Boolean,
-    onBack: () -> Unit,
+    onBack: () -> Unit = {},
+    onOpenMessagesPane: () -> Unit = {},
     isFavoriteOverride: Boolean? = null,
     onFavoriteToggle: (Remote) -> Unit = {},
     onSendUris: (List<Uri>, Boolean) -> Unit = { _: List<Uri>, _: Boolean -> },
@@ -153,6 +160,15 @@ private fun TransferPaneContent(
                                 ?: remote.isFavorite
                         ) "Remove from favorites" else "Add to favorites",
                     )
+
+                    TooltipIconButton(
+                        onClick = onOpenMessagesPane,
+                        icon = Icons.AutoMirrored.Rounded.Message,
+                        description = "Messages",
+                        enabled = remote.supportsTextMessages,
+                        addBadge = remote.hasUnreadMessages,
+                    )
+
                 },
                 scrollBehavior = scrollBehavior,
             )
@@ -162,6 +178,7 @@ private fun TransferPaneContent(
                 TransferFloatingActionButton(
                     onSendFile = { filePicker.launch(arrayOf("*/*")) },
                     onSendFolder = { folderPicker.launch(null) },
+                    onSendMessage = onOpenMessagesPane,
                 )
             }
         },
@@ -315,7 +332,7 @@ private fun ConnectionStatusCard(
             }
 
             Spacer(modifier = Modifier.weight(1f))
-            
+
             if (status == Remote.RemoteStatus.Disconnected || status is Remote.RemoteStatus.Error) {
                 FilledTonalButton(
                     modifier = Modifier.padding(horizontal = 8.dp),
@@ -471,6 +488,8 @@ private fun TransfersPanePreview() {
         status = Remote.RemoteStatus.Connected,
         transfers = transfers,
         isFavorite = false,
+        supportsTextMessages = true,
+        hasUnreadMessages = true,
     )
 
     WarpinatorTheme {
@@ -479,7 +498,6 @@ private fun TransfersPanePreview() {
             paneMode = false,
             onBack = {},
             isFavoriteOverride = false,
-            onFavoriteToggle = {},
         )
     }
 }
@@ -507,7 +525,6 @@ private fun TransfersPaneEmptyPreview() {
             paneMode = false,
             onBack = {},
             isFavoriteOverride = false,
-            onFavoriteToggle = {},
         )
     }
 }
