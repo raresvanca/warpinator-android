@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.plus
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -46,6 +47,7 @@ import slowscript.warpinator.core.design.components.DynamicAvatarCircle
 import slowscript.warpinator.core.design.theme.WarpinatorTheme
 import slowscript.warpinator.core.model.Message
 import slowscript.warpinator.core.model.Remote
+import slowscript.warpinator.core.model.Remote.RemoteStatus
 import slowscript.warpinator.core.model.Transfer
 import slowscript.warpinator.core.utils.RemoteDisplayInfo
 import slowscript.warpinator.feature.home.components.MessageBubble
@@ -79,8 +81,19 @@ private fun MessagesPaneContent(
     val titleFormat = RemoteDisplayInfo.fromRemote(remote)
     var messageText by rememberSaveable { mutableStateOf("") }
 
+    val listState = rememberLazyListState()
+
+    val status = remote.status
+    val isError = status is RemoteStatus.Error
+    val isConnecting = status == RemoteStatus.Connecting || status == RemoteStatus.AwaitingDuplex
+    val isDisconnected = status == RemoteStatus.Disconnected
+
     LaunchedEffect(remote.messages.size) {
         onMarkAsRead()
+
+        if (listState.firstVisibleItemIndex <= 1 || remote.messages.first().direction == Transfer.Direction.Send) {
+            listState.animateScrollToItem(0)
+        }
     }
 
     Scaffold(
@@ -89,8 +102,14 @@ private fun MessagesPaneContent(
         topBar = {
             TopAppBar(
                 title = {
-                    if (paneMode) Text(titleFormat.title) else Row(verticalAlignment = Alignment.CenterVertically) {
-                        DynamicAvatarCircle(bitmap = remote.picture, isFavorite = remote.isFavorite)
+                    if (paneMode) Text("Messages") else Row(verticalAlignment = Alignment.CenterVertically) {
+                        DynamicAvatarCircle(
+                            bitmap = remote.picture,
+                            isFavorite = remote.isFavorite,
+                            hasError = isError,
+                            isLoading = isConnecting,
+                            isDisabled = isDisconnected,
+                        )
                         Text(titleFormat.title, modifier = Modifier.padding(8.dp, 0.dp))
                     }
                 },
@@ -103,7 +122,7 @@ private fun MessagesPaneContent(
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
                 ),
             )
         },
@@ -117,10 +136,9 @@ private fun MessagesPaneContent(
         ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = innerPadding + PaddingValues(
-                    vertical = 8.dp,
-                ) + PaddingValues(bottom = 100.dp),
+                contentPadding = innerPadding + PaddingValues(bottom = 92.dp, top = 8.dp),
                 reverseLayout = true,
+                state = listState,
             ) {
                 items(
                     items = remote.messages,
@@ -161,6 +179,9 @@ private fun MessagesPaneContent(
                         maxLines = 3,
                     )
 
+                    val sendingEnabled =
+                        messageText.isNotBlank() && remote.status == RemoteStatus.Connected && remote.supportsTextMessages
+
                     IconButton(
                         onClick = {
                             if (messageText.isNotBlank()) {
@@ -168,12 +189,12 @@ private fun MessagesPaneContent(
                                 messageText = ""
                             }
                         },
-                        enabled = messageText.isNotBlank(),
+                        enabled = sendingEnabled,
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Rounded.Send,
                             contentDescription = "Send",
-                            tint = if (messageText.isNotBlank()) {
+                            tint = if (sendingEnabled) {
                                 MaterialTheme.colorScheme.primary
                             } else {
                                 MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
@@ -294,7 +315,7 @@ private fun MessagesPanePreview() {
         displayName = "Test Device",
         userName = "user",
         hostname = "hostname",
-        status = Remote.RemoteStatus.Connected,
+        status = RemoteStatus.Connected,
         messages = messages,
         supportsTextMessages = true,
         isFavorite = false,
