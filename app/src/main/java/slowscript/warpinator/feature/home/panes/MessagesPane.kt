@@ -3,7 +3,6 @@ package slowscript.warpinator.feature.home.panes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,7 +22,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -98,7 +96,6 @@ private fun MessagesPaneContent(
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        contentWindowInsets = if (paneMode) WindowInsets() else ScaffoldDefaults.contentWindowInsets,
         topBar = {
             TopAppBar(
                 title = {

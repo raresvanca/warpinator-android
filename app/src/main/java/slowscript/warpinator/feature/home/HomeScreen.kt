@@ -1,8 +1,13 @@
 package slowscript.warpinator.feature.home
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
@@ -53,17 +58,41 @@ fun HomeScreen(
 
     // If structure changes (List -> Detail), allow back. If content changes in Detail, don't pop.
     val backBehavior = BackNavigationBehavior.PopUntilScaffoldValueChange
-    val secondaryPaneMode =
-        (navigator.scaffoldValue.primary == PaneAdaptedValue.Expanded) && (navigator.scaffoldValue.secondary == PaneAdaptedValue.Expanded)
-    val tertiaryPaneMode =
-        (navigator.scaffoldValue.primary == PaneAdaptedValue.Expanded) && (navigator.scaffoldValue.tertiary == PaneAdaptedValue.Expanded)
+
+    val scaffoldValue = navigator.scaffoldValue
+    val isPrimaryExpanded = scaffoldValue.primary == PaneAdaptedValue.Expanded
+    val isSecondaryExpanded = scaffoldValue.secondary == PaneAdaptedValue.Expanded
+    val isTertiaryExpanded = scaffoldValue.tertiary == PaneAdaptedValue.Expanded
+
+    val secondaryPaneMode = isPrimaryExpanded && isSecondaryExpanded
+    val tertiaryPaneMode = isPrimaryExpanded && isTertiaryExpanded
+
+    // Consumed insets
+    val listPaneCI = if (isSecondaryExpanded || isTertiaryExpanded) {
+        WindowInsets.safeDrawing.only(WindowInsetsSides.End)
+    } else WindowInsets(0)
+
+    val detailPaneCI = when {
+        secondaryPaneMode && isTertiaryExpanded -> WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)
+        secondaryPaneMode -> WindowInsets.safeDrawing.only(WindowInsetsSides.Start)
+        !secondaryPaneMode && isTertiaryExpanded -> WindowInsets.safeDrawing.only(WindowInsetsSides.End)
+        else -> WindowInsets(0)
+    }
+
+    val extraPaneCI = if (tertiaryPaneMode) {
+        WindowInsets.safeDrawing.only(WindowInsetsSides.Start)
+    } else WindowInsets(0)
 
     Surface(color = MaterialTheme.colorScheme.surface) {
         NavigableListDetailPaneScaffold(
             navigator = navigator,
             defaultBackBehavior = backBehavior,
             listPane = {
-                AnimatedPane(modifier = Modifier.fillMaxHeight()) {
+                AnimatedPane(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .consumeWindowInsets(listPaneCI),
+                ) {
                     RemoteListPane(
                         onRemoteClick = { remote ->
                             scope.launch {
@@ -81,7 +110,9 @@ fun HomeScreen(
             },
             detailPane = {
 
-                AnimatedPane {
+                AnimatedPane(
+                    Modifier.consumeWindowInsets(detailPaneCI),
+                ) {
                     val selectedUuid = navigator.currentDestination?.contentKey?.uuid
 
                     val selectedRemote by viewModel.getRemote(selectedUuid)
@@ -115,7 +146,9 @@ fun HomeScreen(
                 }
             },
             extraPane = {
-                AnimatedPane {
+                AnimatedPane(
+                    Modifier.consumeWindowInsets(extraPaneCI),
+                ) {
                     val selectedUuid = navigator.currentDestination?.contentKey?.uuid
                     val selectedRemote by viewModel.getRemote(selectedUuid)
                         .collectAsStateWithLifecycle(initialValue = null)
