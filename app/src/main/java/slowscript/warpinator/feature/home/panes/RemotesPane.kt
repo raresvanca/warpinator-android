@@ -36,12 +36,11 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -53,9 +52,9 @@ import slowscript.warpinator.core.data.WarpinatorViewModel
 import slowscript.warpinator.core.design.shapes.WarpinatorRoundedIconOutlineShape
 import slowscript.warpinator.core.design.theme.WarpinatorTheme
 import slowscript.warpinator.core.model.Remote
-import slowscript.warpinator.feature.manual_connection.ManualConnectionDialog
 import slowscript.warpinator.feature.home.components.HomeMenu
 import slowscript.warpinator.feature.home.components.RemoteListItem
+import slowscript.warpinator.feature.manual_connection.ManualConnectionDialog
 
 
 private enum class RemoteListUiState {
@@ -81,7 +80,7 @@ fun RemoteListPane(
 
 
     // Dialog states
-    var showManualConnectionDialog by remember { mutableStateOf(false) }
+    var showManualConnectionDialog by rememberSaveable { mutableStateOf(false) }
 
     RemoteListPaneContent(
         remotes = currentRemotes,
@@ -92,9 +91,12 @@ fun RemoteListPane(
         isRefreshing = currentIsRefreshing,
         paneMode = paneMode,
         onRescan = viewModel::rescan,
+        onShowManualConnectionDialog = { showManualConnectionDialog = true },
     )
 
-    ManualConnectionDialog(showDialog = showManualConnectionDialog)
+    if (showManualConnectionDialog) ManualConnectionDialog(
+        onDismiss = { showManualConnectionDialog = false },
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -107,6 +109,7 @@ fun RemoteListPaneContent(
     onRemoteClick: (Remote) -> Unit,
     onFavoriteToggle: (Remote) -> Unit,
     onRescan: () -> Unit,
+    onShowManualConnectionDialog: () -> Unit = {},
     paneMode: Boolean = false,
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
@@ -114,8 +117,6 @@ fun RemoteListPaneContent(
     )
     val refreshState = rememberPullToRefreshState()
 
-    // Dialog states
-    var showManualConnectionDialog by remember { mutableStateOf(false) }
     // UIStates
     val uiState: RemoteListUiState = (when {
         state is ServiceState.Starting -> RemoteListUiState.Starting
@@ -132,7 +133,7 @@ fun RemoteListPaneContent(
                 title = { Text(stringResource(R.string.app_name)) },
                 actions = {
                     HomeMenu(
-                        onManualConnectionClick = { showManualConnectionDialog = true },
+                        onManualConnectionClick = onShowManualConnectionDialog,
                         onRescan = onRescan,
                     )
                 },
@@ -141,7 +142,7 @@ fun RemoteListPaneContent(
                 title = { Text(stringResource(R.string.app_name)) },
                 actions = {
                     HomeMenu(
-                        onManualConnectionClick = { showManualConnectionDialog = true },
+                        onManualConnectionClick = onShowManualConnectionDialog,
                         onRescan = onRescan,
                     )
                 },
@@ -228,9 +229,8 @@ fun RemoteListPaneContent(
                                             modifier = Modifier.padding(32.dp),
                                         )
                                         Button(
-                                            onClick = { showManualConnectionDialog = true },
-
-                                            ) {
+                                            onClick = onShowManualConnectionDialog,
+                                        ) {
                                             Text(stringResource(R.string.manual_connection))
                                         }
                                     }
@@ -337,10 +337,6 @@ fun RemoteListPaneContent(
             }
         }
     }
-
-    if (showManualConnectionDialog) ManualConnectionDialog(
-        onDismiss = { showManualConnectionDialog = false },
-    )
 }
 
 @Preview

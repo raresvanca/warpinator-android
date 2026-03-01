@@ -107,14 +107,10 @@ sealed interface ManualConnectionDialogState {
 @Composable
 fun ManualConnectionDialog(
     address: String? = null,
-    showDialog: Boolean = true,
     onDismiss: () -> Unit = {},
     viewModel: WarpinatorViewModel = hiltViewModel(),
     dialogState: ManualConnectionDialogState = ManualConnectionDialogState.QRCode,
-
-    ) {
-    if (!showDialog) return
-
+) {
     var dialogState by remember { mutableStateOf(dialogState) }
 
     val clipboard = LocalClipboard.current
