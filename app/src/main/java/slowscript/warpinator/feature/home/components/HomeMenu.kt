@@ -53,18 +53,18 @@ fun HomeMenu(
             listOf(
                 MenuAction(
                     "Manual connection",
-                    icon = Icons.Rounded.AddLink,
+                    trailingIcon = Icons.Rounded.AddLink,
                     onClick = onManualConnectionClick,
                 ),
                 MenuAction(
-                    "Reannounce", icon = Icons.Rounded.WifiTethering, onClick = {},
+                    "Reannounce", trailingIcon = Icons.Rounded.WifiTethering, onClick = {},
                 ),
                 MenuAction(
-                    "Rescan", icon = Icons.Rounded.Refresh, onClick = onRescan,
+                    "Rescan", trailingIcon = Icons.Rounded.Refresh, onClick = onRescan,
                 ),
                 MenuAction(
                     "Connection issues",
-                    icon = Icons.AutoMirrored.Rounded.MenuBook,
+                    trailingIcon = Icons.AutoMirrored.Rounded.MenuBook,
                     onClick = {},
                 ),
             ),
@@ -73,15 +73,15 @@ fun HomeMenu(
             listOf(
                 MenuAction(
                     "Settings",
-                    icon = Icons.Rounded.Settings,
+                    trailingIcon = Icons.Rounded.Settings,
                     onClick = { navController?.navigate("settings") },
                 ),
                 MenuAction(
-                    "Save log", icon = Icons.Rounded.Archive, onClick = {},
+                    "Save log", trailingIcon = Icons.Rounded.Archive, onClick = {},
                 ),
                 MenuAction(
                     "About",
-                    icon = Icons.Outlined.Info,
+                    trailingIcon = Icons.Outlined.Info,
                     onClick = { navController?.navigate("about") },
                 ),
             ),
@@ -90,7 +90,7 @@ fun HomeMenu(
             listOf(
                 MenuAction(
                     "Exit",
-                    icon = Icons.Rounded.Close,
+                    trailingIcon = Icons.Rounded.Close,
                     onClick = {
                         (context as? Activity)?.finish()
                     },

@@ -2,6 +2,7 @@ package slowscript.warpinator.feature.home.components
 
 import android.content.ClipData
 import android.content.Intent
+import android.text.format.DateFormat
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.indication
@@ -15,14 +16,10 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Share
-import androidx.compose.material3.DropdownMenuGroup
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.DropdownMenuPopup
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
@@ -49,6 +46,9 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
 import kotlinx.coroutines.launch
+import slowscript.warpinator.core.design.components.MenuAction
+import slowscript.warpinator.core.design.components.MenuGroup
+import slowscript.warpinator.core.design.components.MenuGroupsPopup
 import slowscript.warpinator.core.design.theme.WarpinatorTheme
 import slowscript.warpinator.core.model.Message
 import slowscript.warpinator.core.model.Transfer
@@ -56,7 +56,7 @@ import java.util.Date
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun MessageBubble(message: Message) {
+fun MessageBubble(message: Message, onDeleteMessage: () -> Unit = {}) {
     val isSent = message.direction == Transfer.Direction.Send
     val context = LocalContext.current
     val clipboard = LocalClipboard.current
@@ -82,7 +82,7 @@ fun MessageBubble(message: Message) {
 
 
     val timeString = remember(message.timestamp) {
-        android.text.format.DateFormat.getTimeFormat(context).format(Date(message.timestamp))
+        DateFormat.getTimeFormat(context).format(Date(message.timestamp))
     }
 
     val annotatedMessage = remember(message.text) {
@@ -167,53 +167,58 @@ fun MessageBubble(message: Message) {
         }
 
         Box {
-            DropdownMenuPopup(
-                expanded = showMenu,
-                onDismissRequest = { showMenu = false },
+            MenuGroupsPopup(
+                menuOpen = showMenu,
+                onDismiss = { showMenu = false },
                 offset = DpOffset(if (isSent) (-24).dp else 24.dp, 0.dp),
                 properties = PopupProperties(
                     // Allow the keyboard to remain active while the popup is opened
                     focusable = false,
                     dismissOnClickOutside = true,
                 ),
-            ) {
-
-                DropdownMenuGroup(
-                    shapes = MenuDefaults.groupShape(0, 1),
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    modifier = Modifier.widthIn(min = 160.dp),
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("Copy") },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Rounded.ContentCopy,
-                                contentDescription = "Copy",
-                            )
-                        },
-                        onClick = {
-                            coroutineScope.launch {
-                                val clipData = ClipData.newPlainText("Message", message.text)
-                                clipboard.setClipEntry(clipData.toClipEntry())
-                            }
-                            showMenu = false
-                        },
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Share") },
-                        leadingIcon = { Icon(Icons.Rounded.Share, contentDescription = "Share") },
-                        onClick = {
-                            val sendIntent = Intent(Intent.ACTION_SEND).apply {
-                                putExtra(Intent.EXTRA_TEXT, message.text)
-                                type = "text/plain"
-                            }
-                            val shareIntent = Intent.createChooser(sendIntent, null)
-                            context.startActivity(shareIntent)
-                            showMenu = false
-                        },
-                    )
-                }
-            }
+                minWidth = 160.dp,
+                menuGroups = listOf(
+                    MenuGroup(
+                        listOf(
+                            MenuAction(
+                                title = "Copy",
+                                leadingIcon = Icons.Rounded.ContentCopy,
+                                onClick = {
+                                    coroutineScope.launch {
+                                        val clipData =
+                                            ClipData.newPlainText("Message", message.text)
+                                        clipboard.setClipEntry(clipData.toClipEntry())
+                                    }
+                                    showMenu = false
+                                },
+                            ),
+                            MenuAction(
+                                title = "Share",
+                                leadingIcon = Icons.Rounded.Share,
+                                onClick = {
+                                    val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                                        putExtra(Intent.EXTRA_TEXT, message.text)
+                                        type = "text/plain"
+                                    }
+                                    val shareIntent = Intent.createChooser(sendIntent, null)
+                                    context.startActivity(shareIntent)
+                                    showMenu = false
+                                },
+                            ),
+                        ),
+                    ),
+                    MenuGroup(
+                        listOf(
+                            MenuAction(
+                                title = "Delete",
+                                leadingIcon = Icons.Rounded.Delete,
+                                onClick = onDeleteMessage,
+                            ),
+                        ),
+                        true,
+                    ),
+                ),
+            )
         }
     }
 }

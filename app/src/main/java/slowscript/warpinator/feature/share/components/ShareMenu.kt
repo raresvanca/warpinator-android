@@ -55,14 +55,16 @@ fun ShareMenu(
             listOf(
                 MenuAction(
                     "Manual connection",
-                    icon = Icons.Rounded.AddLink,
+                    trailingIcon = Icons.Rounded.AddLink,
                     onClick = onManualConnectionClick,
                 ),
                 MenuAction(
-                    "Reannounce", icon = Icons.Rounded.WifiTethering, onClick = onReannounce,
+                    "Reannounce",
+                    trailingIcon = Icons.Rounded.WifiTethering,
+                    onClick = onReannounce,
                 ),
                 MenuAction(
-                    "Rescan", icon = Icons.Rounded.Refresh, onClick = onRescan,
+                    "Rescan", trailingIcon = Icons.Rounded.Refresh, onClick = onRescan,
                 ),
             ),
         ),

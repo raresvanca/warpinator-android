@@ -63,6 +63,7 @@ fun MessagesPane(
         onBack = onBack,
         onSendMessage = { message -> viewModel.sendTextMessage(remote, message) },
         onMarkAsRead = { viewModel.markTextMessagesAsRead(remote) },
+        onDeleteMessage = { message -> viewModel.clearMessage(message) },
     )
 }
 
@@ -75,6 +76,7 @@ private fun MessagesPaneContent(
     onBack: () -> Unit = {},
     onSendMessage: (String) -> Unit = {},
     onMarkAsRead: () -> Unit = {},
+    onDeleteMessage: (Message) -> Unit = {},
 ) {
     val titleFormat = RemoteDisplayInfo.fromRemote(remote)
     var messageText by rememberSaveable { mutableStateOf("") }
@@ -141,7 +143,10 @@ private fun MessagesPaneContent(
                     items = remote.messages,
                     key = { message -> message.timestamp },
                 ) { message ->
-                    MessageBubble(message)
+                    MessageBubble(
+                        message,
+                        onDeleteMessage = { onDeleteMessage(message) },
+                    )
                 }
             }
 
