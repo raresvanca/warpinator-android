@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.net.Uri
 import android.util.Log
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -58,6 +57,8 @@ class PreferenceManager @Inject constructor(
             DEFAULT_PROFILE_PICTURE,
         )
     val theme: String get() = prefs.getString(KEY_THEME, VAL_THEME_DEFAULT) ?: VAL_THEME_DEFAULT
+    val integrateMessages: Boolean get() = prefs.getBoolean(KEY_INTEGRATE_MESSAGES, false)
+    val dynamicColors: Boolean get() = prefs.getBoolean(KEY_DYNAMIC_COLORS, true)
 
     init {
         loadSettings()
@@ -72,12 +73,6 @@ class PreferenceManager @Inject constructor(
         // Boot/AutoStop logic migration
         if (bootStart && autoStop) {
             prefs.edit { putBoolean(KEY_AUTO_STOP, false) }
-        }
-
-        when (ThemeOptions.fromKey(theme)) {
-            ThemeOptions.SYSTEM_DEFAULT -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
-            ThemeOptions.LIGHT_THEME -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-            ThemeOptions.DARK_THEME -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
         }
 
         // Load Complex Data
@@ -240,12 +235,13 @@ class PreferenceManager @Inject constructor(
 
     fun setTheme(value: ThemeOptions) {
         prefs.edit { putString(KEY_THEME, value.key) }
-        when (value) {
-            ThemeOptions.SYSTEM_DEFAULT -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
-            ThemeOptions.LIGHT_THEME -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-            ThemeOptions.DARK_THEME -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-        }
     }
+
+    fun setIntegrateMessages(value: Boolean) =
+        prefs.edit { putBoolean(KEY_INTEGRATE_MESSAGES, value) }
+
+    fun setDynamicColors(value: Boolean) = prefs.edit { putBoolean(KEY_DYNAMIC_COLORS, value) }
+
 
     companion object {
         private const val TAG = "Prefs"
@@ -266,6 +262,8 @@ class PreferenceManager @Inject constructor(
         const val KEY_AUTH_PORT = "authPort"
         const val KEY_NETWORK_INTERFACE = "networkInterface"
         const val KEY_THEME = "theme_setting"
+        const val KEY_INTEGRATE_MESSAGES = "integrateMessages"
+        const val KEY_DYNAMIC_COLORS = "dynamicColors"
 
         const val KEY_FAVORITES = "favorites"
         const val KEY_RECENT_REMOTES = "recentRemotes"

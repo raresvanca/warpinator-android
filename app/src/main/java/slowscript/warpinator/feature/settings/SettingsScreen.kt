@@ -146,6 +146,8 @@ fun SettingsScreen(
         onAuthPortChange = viewModel::setAuthPort,
         onNetworkInterfaceChange = viewModel::setNetworkInterface,
         onThemeChange = viewModel::updateTheme,
+        onIntegrateMessagesChange = viewModel::setIntegrateMessages,
+        onUseDynamicColorsChange = viewModel::setUseDynamicColors,
     )
 }
 
@@ -171,6 +173,8 @@ fun SettingsScreenContent(
     onAuthPortChange: (String) -> Unit,
     onNetworkInterfaceChange: (String) -> Unit,
     onThemeChange: (ThemeOptions) -> Unit,
+    onIntegrateMessagesChange: (Boolean) -> Unit,
+    onUseDynamicColorsChange: (Boolean) -> Unit,
 ) {
     val context = LocalContext.current
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -416,11 +420,30 @@ fun SettingsScreenContent(
 
                 val themeLabelResId = state.themeMode.label
 
+                SwitchListItem(
+                    title = "Integrate messages with transfers",
+                    summary = if (state.integrateMessages) "Messages and file transfers are shown in a single list" else "Messages and transfers are being kept in separate views",
+                    checked = state.integrateMessages,
+                    onCheckedChange = onIntegrateMessagesChange,
+                    shapes = ListItemDefaults.segmentedDynamicShapes(0, 3),
+                    colors = listItemColors,
+                )
+
+
                 SegmentedListItem(
                     content = { Text(stringResource(R.string.theme_settings_title)) },
                     supportingContent = { Text(stringResource(themeLabelResId)) },
                     onClick = { showThemeDialog = true },
-                    shapes = ListItemDefaults.segmentedDynamicShapes(0, 1),
+                    shapes = ListItemDefaults.segmentedDynamicShapes(1, 3),
+                    colors = listItemColors,
+                    modifier = Modifier.padding(bottom = ListItemDefaults.SegmentedGap),
+                )
+
+                SwitchListItem(
+                    title = "Use dynamic colors",
+                    checked = state.dynamicColors,
+                    onCheckedChange = onUseDynamicColorsChange,
+                    shapes = ListItemDefaults.segmentedDynamicShapes(2, 3),
                     colors = listItemColors,
                 )
 
@@ -501,6 +524,8 @@ fun SettingsScreenPreview() {
             onAuthPortChange = {},
             onNetworkInterfaceChange = {},
             onThemeChange = {},
+            onIntegrateMessagesChange = {},
+            onUseDynamicColorsChange = {},
         )
     }
 }

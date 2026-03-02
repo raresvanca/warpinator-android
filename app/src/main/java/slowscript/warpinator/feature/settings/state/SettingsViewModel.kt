@@ -71,8 +71,10 @@ data class SettingsUiState(
     val networkInterface: String = PreferenceManager.DEFAULT_NETWORK_INTERFACE,
     val interfaceEntries: List<Pair<String, String>> = emptyList(),
 
-    // Aspect (Theme)
+    // Aspect
     val themeMode: ThemeOptions = ThemeOptions.SYSTEM_DEFAULT,
+    val integrateMessages: Boolean = false,
+    val dynamicColors: Boolean = true,
 )
 
 @HiltViewModel
@@ -150,8 +152,10 @@ class SettingsViewModel @Inject constructor(
                 authPort = preferenceManager.authPort.toString(),
                 networkInterface = preferenceManager.networkInterface,
 
-                // Theme
+                // Aspect
                 themeMode = ThemeOptions.fromKey(preferenceManager.theme),
+                integrateMessages = preferenceManager.integrateMessages,
+                dynamicColors = preferenceManager.dynamicColors,
             )
         }
     }
@@ -234,6 +238,15 @@ class SettingsViewModel @Inject constructor(
     fun updateTheme(value: ThemeOptions) {
         preferenceManager.setTheme(value)
     }
+
+    fun setIntegrateMessages(value: Boolean) {
+        preferenceManager.setIntegrateMessages(value)
+    }
+
+    fun setUseDynamicColors(value: Boolean) {
+        preferenceManager.setDynamicColors(value)
+    }
+
 
     private fun loadInterfaces() {
         viewModelScope.launch(Dispatchers.IO) {
