@@ -7,7 +7,6 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Environment
-import androidx.annotation.StringRes
 import androidx.core.graphics.scale
 import androidx.core.net.toUri
 import androidx.lifecycle.AndroidViewModel
@@ -21,19 +20,15 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import slowscript.warpinator.R
 import slowscript.warpinator.core.model.preferences.ThemeOptions
+import slowscript.warpinator.core.model.ui.UiMessage
 import slowscript.warpinator.core.system.PreferenceManager
 import slowscript.warpinator.core.utils.Utils
+import slowscript.warpinator.feature.settings.messages.FailedToSaveProfilePicture
+import slowscript.warpinator.feature.settings.messages.NeedsRestartMessage
+import slowscript.warpinator.feature.settings.messages.PortOutOfBounds
 import java.io.File
 import javax.inject.Inject
-
-sealed interface SettingsEvent {
-    data class ShowToast(@param:StringRes val messageId: Int, val isLong: Boolean = false) :
-        SettingsEvent
-
-    data class ShowToastString(val message: String, val isLong: Boolean = false) : SettingsEvent
-}
 
 /**
  * Represents the immutable UI state for the Settings screen.
@@ -86,8 +81,8 @@ class SettingsViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState = _uiState.asStateFlow()
 
-    private val _events = Channel<SettingsEvent>(Channel.BUFFERED)
-    val events = _events.receiveAsFlow()
+    private val _uiMessages = Channel<UiMessage>(Channel.BUFFERED)
+    val uiMessages = _uiMessages.receiveAsFlow()
 
     private val preferenceChangeListener =
         SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
@@ -166,7 +161,7 @@ class SettingsViewModel @Inject constructor(
 
     fun setGroupCode(value: String) {
         preferenceManager.setGroupCode(value)
-        viewModelScope.launch { _events.send(SettingsEvent.ShowToast(R.string.requires_restart_warning)) }
+        viewModelScope.launch { _uiMessages.send(NeedsRestartMessage()) }
     }
 
     fun setServerPort(value: String) {
@@ -181,12 +176,12 @@ class SettingsViewModel @Inject constructor(
         val parsedPort = value.toIntOrNull()
         if (parsedPort == null || parsedPort !in 1024..65535) {
             viewModelScope.launch {
-                _events.send(SettingsEvent.ShowToast(R.string.port_range_warning, isLong = true))
+                _uiMessages.send(PortOutOfBounds())
             }
             return
         }
         saveAction(value)
-        viewModelScope.launch { _events.send(SettingsEvent.ShowToast(R.string.requires_restart_warning)) }
+        viewModelScope.launch { _uiMessages.send(NeedsRestartMessage()) }
     }
 
     fun setNetworkInterface(value: String) {
@@ -219,7 +214,7 @@ class SettingsViewModel @Inject constructor(
 
     fun setDebugLog(value: Boolean) {
         preferenceManager.setDebugLog(value)
-        viewModelScope.launch { _events.send(SettingsEvent.ShowToast(R.string.requires_restart_warning)) }
+        viewModelScope.launch { _uiMessages.send(NeedsRestartMessage()) }
     }
 
     fun setDirectory(uri: Uri) {
@@ -264,7 +259,7 @@ class SettingsViewModel @Inject constructor(
                     if (ip != null) {
                         interfaceDisplayLabel += " (${ip.address.hostAddress} /${ip.prefixLength})"
                     }
-                } catch (e: Exception) { /* Ignored */
+                } catch (_: Exception) { /* Ignored */
                 }
                 interfaceDropdownEntries.add(interfaceDisplayLabel to interfaceName)
             }
@@ -307,11 +302,8 @@ class SettingsViewModel @Inject constructor(
             } catch (e: Exception) {
                 e.printStackTrace()
                 viewModelScope.launch {
-                    _events.send(
-                        SettingsEvent.ShowToastString(
-                            application.getString(R.string.failed_to_save_profile_picture, e),
-                            isLong = true,
-                        ),
+                    _uiMessages.send(
+                        FailedToSaveProfilePicture(e),
                     )
                 }
             }

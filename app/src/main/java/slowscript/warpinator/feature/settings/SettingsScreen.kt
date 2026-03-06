@@ -3,7 +3,6 @@ package slowscript.warpinator.feature.settings
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -27,6 +26,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MediumFlexibleTopAppBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedListItem
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -46,6 +47,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import slowscript.warpinator.R
 import slowscript.warpinator.app.LocalNavController
 import slowscript.warpinator.core.design.components.DynamicAvatarCircle
+import slowscript.warpinator.core.design.components.MessagesHandlerEffect
 import slowscript.warpinator.core.design.shapes.segmentedDynamicShapes
 import slowscript.warpinator.core.design.theme.WarpinatorTheme
 import slowscript.warpinator.core.model.preferences.ThemeOptions
@@ -56,7 +58,6 @@ import slowscript.warpinator.feature.settings.components.ProfilePictureDialog
 import slowscript.warpinator.feature.settings.components.SettingsCategoryLabel
 import slowscript.warpinator.feature.settings.components.SwitchListItem
 import slowscript.warpinator.feature.settings.components.TextInputDialog
-import slowscript.warpinator.feature.settings.state.SettingsEvent
 import slowscript.warpinator.feature.settings.state.SettingsUiState
 import slowscript.warpinator.feature.settings.state.SettingsViewModel
 
@@ -68,28 +69,11 @@ fun SettingsScreen(
     val context = LocalContext.current
     val navController = LocalNavController.current
 
-    // Observe ViewModel Events (Toast)
-    LaunchedEffect(viewModel) {
-        viewModel.events.collect { event ->
-            when (event) {
-                is SettingsEvent.ShowToast -> {
-                    Toast.makeText(
-                        context,
-                        event.messageId,
-                        if (event.isLong) Toast.LENGTH_LONG else Toast.LENGTH_SHORT,
-                    ).show()
-                }
+    val snackbarHostState = remember { SnackbarHostState() }
 
-                is SettingsEvent.ShowToastString -> {
-                    Toast.makeText(
-                        context,
-                        event.message,
-                        if (event.isLong) Toast.LENGTH_LONG else Toast.LENGTH_SHORT,
-                    ).show()
-                }
-            }
-        }
-    }
+    MessagesHandlerEffect(
+        messageProvider = viewModel.uiMessages, snackbarHostState = snackbarHostState,
+    )
 
     val dirPickerLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
@@ -126,6 +110,7 @@ fun SettingsScreen(
 
     SettingsScreenContent(
         state = state,
+        snackbarHostState = snackbarHostState,
         onBackClick = { navController?.popBackStack() },
         onDisplayNameChange = viewModel::setDisplayName,
         onProfilePictureChange = viewModel::setProfilePicture,
@@ -155,6 +140,7 @@ fun SettingsScreen(
 @Composable
 fun SettingsScreenContent(
     state: SettingsUiState,
+    snackbarHostState: SnackbarHostState,
     onBackClick: () -> Unit,
     onDisplayNameChange: (String) -> Unit,
     onProfilePictureChange: (String) -> Unit,
@@ -205,6 +191,7 @@ fun SettingsScreenContent(
     )
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             MediumFlexibleTopAppBar(
                 title = { Text(stringResource(R.string.settings)) },
@@ -506,6 +493,7 @@ fun SettingsScreenPreview() {
     WarpinatorTheme {
         SettingsScreenContent(
             state = SettingsUiState(),
+            snackbarHostState = SnackbarHostState(),
             onBackClick = {},
             onDisplayNameChange = {},
             onProfilePictureChange = {},

@@ -26,6 +26,7 @@ import slowscript.warpinator.core.model.Transfer
 import slowscript.warpinator.core.network.Authenticator
 import slowscript.warpinator.core.network.CertServer
 import slowscript.warpinator.core.network.Server
+import slowscript.warpinator.core.network.messages.FoundGroupCodeError
 import slowscript.warpinator.core.notification.WarpinatorNotificationManager
 import slowscript.warpinator.core.utils.Utils
 import java.net.DatagramPacket
@@ -71,6 +72,7 @@ class RemoteWorker(
                 repository.updateRemoteStatus(
                     uuid, Remote.RemoteStatus.Error(hasGroupCodeException = true),
                 )
+                repository.emitMessage(FoundGroupCodeError(), true)
             } else {
                 repository.updateRemoteStatus(
                     uuid, Remote.RemoteStatus.Error(isCertificateUnreceived = true),

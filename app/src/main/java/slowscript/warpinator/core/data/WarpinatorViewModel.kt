@@ -52,6 +52,8 @@ class WarpinatorViewModel @Inject constructor(
             return "${repository.currentIPStr}:${server.authPort}"
         }
 
+    val uiMessages = repository.uiMessages
+
     // Remotes
 
     fun getRemote(uuid: String?): Flow<Remote?> {

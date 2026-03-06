@@ -4,20 +4,20 @@ import android.content.Context
 import android.graphics.Bitmap
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import slowscript.warpinator.core.model.Message
 import slowscript.warpinator.core.model.Remote
 import slowscript.warpinator.core.model.Remote.RemoteStatus
 import slowscript.warpinator.core.model.Transfer
+import slowscript.warpinator.core.model.ui.UiMessage
 import slowscript.warpinator.core.service.RemotesManager
 import slowscript.warpinator.core.service.TransfersManager
 import slowscript.warpinator.core.system.PreferenceManager
@@ -37,18 +37,15 @@ class WarpinatorRepository @Inject constructor(
     private val _serviceState = MutableStateFlow<ServiceState>(ServiceState.Starting)
     private val _networkState = MutableStateFlow(NetworkState())
     private val _refreshing = MutableStateFlow(false)
-    private val _statusMessages = MutableSharedFlow<String>(
-        replay = 0, // Don't replay old messages to new subscribers
-        extraBufferCapacity = 64, // Allow buffering if UI is busy
-        onBufferOverflow = BufferOverflow.DROP_OLDEST,
-    )
+    private val _uiMessages = Channel<UiMessage>(Channel.BUFFERED)
+    private val _seenMarkers = mutableSetOf<Any>()
 
     // Observables
     val remoteListState = _remoteListState.asStateFlow()
     val serviceState = _serviceState.asStateFlow()
     val networkState = _networkState.asStateFlow()
     val refreshingState = _refreshing.asStateFlow()
-    val statusMessages = _statusMessages.asSharedFlow()
+    val uiMessages = _uiMessages.receiveAsFlow()
 
     val prefs = PreferenceManager(appContext)
 
@@ -77,8 +74,14 @@ class WarpinatorRepository @Inject constructor(
         _refreshing.value = refreshing
     }
 
-    fun emitMessage(message: String) {
-        _statusMessages.tryEmit(message)
+    fun emitMessage(message: UiMessage, oneTime: Boolean = false) {
+        if (oneTime) {
+            if (_seenMarkers.contains(message.id)) return
+            _seenMarkers.add(message.id!!)
+        }
+        applicationScope.launch {
+            _uiMessages.send(message)
+        }
     }
 
 

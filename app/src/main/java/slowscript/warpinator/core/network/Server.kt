@@ -26,6 +26,13 @@ import slowscript.warpinator.core.data.WarpinatorRepository
 import slowscript.warpinator.core.model.Remote
 import slowscript.warpinator.core.model.Remote.RemoteStatus
 import slowscript.warpinator.core.model.preferences.SavedFavourite
+import slowscript.warpinator.core.network.messages.FailedToReannounce
+import slowscript.warpinator.core.network.messages.FailedToRescan
+import slowscript.warpinator.core.network.messages.FailedToStartGRPC
+import slowscript.warpinator.core.network.messages.FailedToStartJmDNS
+import slowscript.warpinator.core.network.messages.FailedToStartTLSError
+import slowscript.warpinator.core.network.messages.FailedToStartV2
+import slowscript.warpinator.core.network.messages.FailedToUnregister
 import slowscript.warpinator.core.service.GrpcService
 import slowscript.warpinator.core.service.RegistrationService
 import slowscript.warpinator.core.service.RemotesManager
@@ -142,7 +149,7 @@ class Server @Inject constructor(
         } catch (e: Exception) {
             running = false
             Log.e(TAG, "Failed to init JmDNS", e)
-//            LocalBroadcasts.displayToast(svc, "Failed to start JmDNS", 0)
+            repository.emitMessage(FailedToStartJmDNS())
         }
     }
 
@@ -197,36 +204,30 @@ class Server @Inject constructor(
             running = false
             if (e.cause is CertificateException) {
                 Log.e(TAG, "Failed to initialize SSL context", e)
-//                Toast.makeText(
-//                    svc,
-//                    "Failed to start service due to TLS error. Please contact the developers.",
-//                    Toast.LENGTH_LONG
-//                ).show()
+                repository.emitMessage(FailedToStartTLSError())
                 return
             }
             Log.e(TAG, "Failed to start GRPC server.", e)
-//            Toast.makeText(
-//                svc,
-//                "Failed to start GRPC server. Please try rebooting your phone or changing port numbers.",
-//                Toast.LENGTH_LONG
-//            ).show()
+            repository.emitMessage(FailedToStartGRPC())
         }
     }
 
     fun startRegistrationServer() {
         try {
-            regServer =
-                NettyServerBuilder.forPort(authPort).addService(RegistrationService()).build()
+            regServer = NettyServerBuilder.forPort(authPort).addService(
+                RegistrationService(
+                    repository = repository,
+                    server = this,
+                    remotesManager = remotesManager.get(),
+                    authenticator = authenticator,
+                ),
+            ).build()
             regServer!!.start()
             Log.d(TAG, "Registration server started")
         } catch (e: Exception) {
             apiVersion = 1
             Log.w(TAG, "Failed to start V2 registration service.", e)
-//            Toast.makeText(
-//                svc,
-//                "Failed to start V2 registration service. Only V1 will be available.",
-//                Toast.LENGTH_LONG
-//            ).show()
+            repository.emitMessage(FailedToStartV2())
         }
     }
 
@@ -365,11 +366,7 @@ class Server @Inject constructor(
                 (jmdns as JmDNSImpl).send(out)
             } catch (e: Exception) {
                 Log.e(TAG, "Reannounce failed", e)
-//                LocalBroadcasts.displayToast(
-//                    svc,
-//                    "Reannounce failed: " + e.message,
-//                    Toast.LENGTH_LONG
-//                )
+                repository.emitMessage(FailedToReannounce(e))
             }
         }
     }
@@ -397,7 +394,7 @@ class Server @Inject constructor(
                 delay(1000)
             } catch (e: Exception) {
                 Log.e(TAG, "Rescan failed", e)
-//                LocalBroadcasts.displayToast(svc, "Rescan failed: " + e.message, Toast.LENGTH_LONG)
+                repository.emitMessage(FailedToRescan(e))
             } finally {
                 repository.setRefresh(false)
             }
@@ -416,11 +413,7 @@ class Server @Inject constructor(
             (jmdns as JmDNSImpl).send(out)
         } catch (e: Exception) {
             Log.e(TAG, "Unregistering failed", e)
-//            LocalBroadcasts.displayToast(
-//                svc,
-//                "Unregistering failed: " + e.message,
-//                Toast.LENGTH_LONG
-//            )
+            repository.emitMessage(FailedToUnregister(e))
         }
     }
 

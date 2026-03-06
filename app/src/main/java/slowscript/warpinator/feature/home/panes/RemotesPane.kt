@@ -27,6 +27,8 @@ import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -36,6 +38,7 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -49,6 +52,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import slowscript.warpinator.R
 import slowscript.warpinator.core.data.ServiceState
 import slowscript.warpinator.core.data.WarpinatorViewModel
+import slowscript.warpinator.core.design.components.MessagesHandlerEffect
 import slowscript.warpinator.core.design.shapes.WarpinatorRoundedIconOutlineShape
 import slowscript.warpinator.core.design.theme.WarpinatorTheme
 import slowscript.warpinator.core.model.Remote
@@ -78,6 +82,11 @@ fun RemoteListPane(
     val currentNetworkState by viewModel.networkState.collectAsStateWithLifecycle()
     val currentIsRefreshing by viewModel.refreshState.collectAsStateWithLifecycle()
 
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    MessagesHandlerEffect(
+        messageProvider = viewModel.uiMessages, snackbarHostState = snackbarHostState,
+    )
 
     // Dialog states
     var showManualConnectionDialog by rememberSaveable { mutableStateOf(false) }
@@ -92,6 +101,7 @@ fun RemoteListPane(
         paneMode = paneMode,
         onRescan = viewModel::rescan,
         onShowManualConnectionDialog = { showManualConnectionDialog = true },
+        snackbarHostState = snackbarHostState,
     )
 
     if (showManualConnectionDialog) ManualConnectionDialog(
@@ -111,6 +121,7 @@ fun RemoteListPaneContent(
     onRescan: () -> Unit,
     onShowManualConnectionDialog: () -> Unit = {},
     paneMode: Boolean = false,
+    snackbarHostState: SnackbarHostState? = null,
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
         canScroll = { !paneMode },
@@ -128,6 +139,7 @@ fun RemoteListPaneContent(
     })
 
     Scaffold(
+        snackbarHost = { snackbarHostState?.let { SnackbarHost(it) } },
         topBar = {
             if (paneMode) TopAppBar(
                 title = { Text(stringResource(R.string.app_name)) },

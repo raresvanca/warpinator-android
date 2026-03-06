@@ -15,21 +15,13 @@ import slowscript.warpinator.core.model.Remote
 import slowscript.warpinator.core.model.preferences.SavedFavourite
 import slowscript.warpinator.core.network.Authenticator
 import slowscript.warpinator.core.network.Server
-import javax.inject.Inject
 
-class RegistrationService() : WarpRegistrationImplBase() {
-    @Inject
-    lateinit var repository: WarpinatorRepository
-
-    @Inject
-    lateinit var server: Server
-
-
-    @Inject
-    lateinit var remotesManager: RemotesManager
-
-    @Inject
-    lateinit var authenticator: Authenticator
+class RegistrationService(
+    var repository: WarpinatorRepository,
+    var server: Server,
+    var remotesManager: RemotesManager,
+    var authenticator: Authenticator,
+) : WarpRegistrationImplBase() {
 
 
     val scope = repository.applicationScope
