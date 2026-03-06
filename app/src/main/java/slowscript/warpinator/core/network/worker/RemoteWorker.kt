@@ -69,14 +69,24 @@ class RemoteWorker(
             )
         ) {
             if (hasGroupCodeException) {
-                repository.updateRemoteStatus(
-                    uuid, Remote.RemoteStatus.Error(hasGroupCodeException = true),
-                )
+                repository.updateRemote(
+                    uuid,
+                ) {
+                    it.copy(
+                        hasErrorGroupCode = true,
+                        status = Remote.RemoteStatus.Error(hasGroupCodeException = true),
+                    )
+                }
                 repository.emitMessage(FoundGroupCodeError(), true)
             } else {
-                repository.updateRemoteStatus(
-                    uuid, Remote.RemoteStatus.Error(isCertificateUnreceived = true),
-                )
+                repository.updateRemote(
+                    uuid,
+                ) {
+                    it.copy(
+                        hasErrorGroupCode = false,
+                        status = Remote.RemoteStatus.Error(isCertificateUnreceived = true),
+                    )
+                }
             }
             return@withContext false
         }
