@@ -400,23 +400,6 @@ class MainService : LifecycleService() {
 
         var pingTime: Long = 10000
         var reconnectTime: Long = 40000
-
-        fun dumpLog(): File? {
-//            Log.d(TAG, "Saving log...")
-//            val service
-//            val output = File(service.externalCacheDir, "dump.log")
-//            val cmd = "logcat -d -f ${output.absolutePath}\n"
-//            try {
-//                val process = Runtime.getRuntime().exec(cmd)
-//                process.waitFor()
-//            } catch (e: Exception) {
-//                Log.e(TAG, "Failed to dump log", e)
-//                return null
-//            }
-//            return output
-            // TODO(raresvanca): move this to the repo
-            return null
-        }
     }
 }
 

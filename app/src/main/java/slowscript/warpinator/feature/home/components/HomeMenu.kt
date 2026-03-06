@@ -1,6 +1,9 @@
 package slowscript.warpinator.feature.home.components
 
 import android.app.Activity
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
@@ -27,6 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.tooling.preview.Preview
 import slowscript.warpinator.app.LocalNavController
 import slowscript.warpinator.core.design.components.MenuAction
@@ -41,7 +45,21 @@ fun HomeMenu(
     initiallyExpanded: Boolean = false,
     onManualConnectionClick: () -> Unit,
     onRescan: () -> Unit,
+    onReannounce: () -> Unit,
+    onSaveLog: (uri: Uri) -> Unit,
 ) {
+    val helpUrl = "https://slowscript.xyz/warpinator-android/connection-issues/"
+    val uriHandler = LocalUriHandler.current
+
+    val saveLocationPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument(
+            mimeType = "text/plain",
+        ),
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        onSaveLog(uri)
+    }
+
     var menuOpen by rememberSaveable { mutableStateOf(initiallyExpanded) }
     val groupInteractionSource = remember { MutableInteractionSource() }
 
@@ -57,7 +75,9 @@ fun HomeMenu(
                     onClick = onManualConnectionClick,
                 ),
                 MenuAction(
-                    "Reannounce", trailingIcon = Icons.Rounded.WifiTethering, onClick = {},
+                    "Reannounce",
+                    trailingIcon = Icons.Rounded.WifiTethering,
+                    onClick = onReannounce,
                 ),
                 MenuAction(
                     "Rescan", trailingIcon = Icons.Rounded.Refresh, onClick = onRescan,
@@ -65,7 +85,9 @@ fun HomeMenu(
                 MenuAction(
                     "Connection issues",
                     trailingIcon = Icons.AutoMirrored.Rounded.MenuBook,
-                    onClick = {},
+                    onClick = {
+                        uriHandler.openUri(helpUrl)
+                    },
                 ),
             ),
         ),
@@ -77,7 +99,10 @@ fun HomeMenu(
                     onClick = { navController?.navigate("settings") },
                 ),
                 MenuAction(
-                    "Save log", trailingIcon = Icons.Rounded.Archive, onClick = {},
+                    "Save log", trailingIcon = Icons.Rounded.Archive,
+                    onClick = {
+                        saveLocationPicker.launch("warpinator-log.txt")
+                    },
                 ),
                 MenuAction(
                     "About",
@@ -121,7 +146,13 @@ fun HomeMenu(
 fun HomeMenuPreview() {
     Scaffold { paddingValues ->
         Box(modifier = Modifier.padding(paddingValues)) {
-            HomeMenu(true, onRescan = {}, onManualConnectionClick = {})
+            HomeMenu(
+                true,
+                onRescan = {},
+                onManualConnectionClick = {},
+                onSaveLog = {},
+                onReannounce = {},
+            )
         }
     }
 }

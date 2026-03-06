@@ -17,6 +17,7 @@ import slowscript.warpinator.core.model.Remote
 import slowscript.warpinator.core.model.Transfer
 import slowscript.warpinator.core.network.Server
 import slowscript.warpinator.core.system.PreferenceManager
+import slowscript.warpinator.core.utils.LogFileWriter
 import java.io.File
 import javax.inject.Inject
 
@@ -76,6 +77,10 @@ class WarpinatorViewModel @Inject constructor(
 
     fun rescan() {
         server.rescan()
+    }
+
+    fun reannounce() {
+        server.reannounce()
     }
 
     suspend fun connectToRemoteHost(address: String): ManualConnectionResult {
@@ -222,4 +227,13 @@ class WarpinatorViewModel @Inject constructor(
             ) { remote -> remote.copy(hasUnreadMessages = false) }
         }
     }
+
+    // Utils
+
+    fun saveLog(uri: Uri) = LogFileWriter.writeLog(
+        uri,
+        repository.applicationScope,
+        repository.appContext,
+        repository::emitMessage,
+    )
 }

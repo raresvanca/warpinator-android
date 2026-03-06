@@ -116,7 +116,7 @@ fun ShareDialog(
                 onSendText = onSendText,
                 onShowManualConnectionDialog = onShowManualConnectionDialog,
                 onRescan = viewModel::rescan,
-                onReannounce = {},
+                onReannounce = viewModel::reannounce,
             )
         } else {
             ShareDialogFloatingWrapper(
@@ -128,7 +128,7 @@ fun ShareDialog(
                 onSendText = onSendText,
                 onShowManualConnectionDialog = onShowManualConnectionDialog,
                 onRescan = viewModel::rescan,
-                onReannounce = {},
+                onReannounce = viewModel::reannounce,
             )
         }
     }

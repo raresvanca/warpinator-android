@@ -1,5 +1,6 @@
 package slowscript.warpinator.feature.home.panes
 
+import android.net.Uri
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -101,6 +102,8 @@ fun RemoteListPane(
         isRefreshing = currentIsRefreshing,
         paneMode = paneMode,
         onRescan = viewModel::rescan,
+        onReannounce = viewModel::reannounce,
+        onSaveLog = viewModel::saveLog,
         onShowManualConnectionDialog = { showManualConnectionDialog = true },
         snackbarHostState = snackbarHostState,
     )
@@ -120,6 +123,8 @@ fun RemoteListPaneContent(
     onRemoteClick: (Remote) -> Unit,
     onFavoriteToggle: (Remote) -> Unit,
     onRescan: () -> Unit,
+    onReannounce: () -> Unit = {},
+    onSaveLog: (uri: Uri) -> Unit = {},
     onShowManualConnectionDialog: () -> Unit = {},
     paneMode: Boolean = false,
     snackbarHostState: SnackbarHostState? = null,
@@ -150,6 +155,8 @@ fun RemoteListPaneContent(
                     HomeMenu(
                         onManualConnectionClick = onShowManualConnectionDialog,
                         onRescan = onRescan,
+                        onReannounce = onReannounce,
+                        onSaveLog = onSaveLog,
                     )
                 },
                 scrollBehavior = scrollBehavior,
@@ -159,6 +166,8 @@ fun RemoteListPaneContent(
                     HomeMenu(
                         onManualConnectionClick = onShowManualConnectionDialog,
                         onRescan = onRescan,
+                        onReannounce = onReannounce,
+                        onSaveLog = onSaveLog,
                     )
                 },
                 scrollBehavior = scrollBehavior,
