@@ -33,6 +33,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.xr.compose.platform.LocalSpatialCapabilities
 import kotlinx.coroutines.launch
 import slowscript.warpinator.core.data.WarpinatorViewModel
 import slowscript.warpinator.core.model.ui.RemoteRoute
@@ -50,15 +51,18 @@ fun HomeScreen(
     remoteTarget: Pair<String, Boolean>? = null,
     onRemoteTargetConsumed: () -> Unit = {},
 ) {
+    val isSpatialUiEnabled = LocalSpatialCapabilities.current.isSpatialUiEnabled
+
     // The Navigator controls the three panes logic automatically
-    val navigator = rememberListDetailPaneScaffoldNavigator<RemoteRoute>(
-        scaffoldDirective = calculatePaneScaffoldDirective(
-            currentWindowAdaptiveInfo(),
-        ).copy(
-            // This removes the gap between the panes
-            horizontalPartitionSpacerSize = 0.dp,
-        ),
-    )
+    val navigator =
+        if (isSpatialUiEnabled) rememberListDetailPaneScaffoldNavigator<RemoteRoute>() else rememberListDetailPaneScaffoldNavigator<RemoteRoute>(
+            scaffoldDirective = calculatePaneScaffoldDirective(
+                currentWindowAdaptiveInfo(true),
+            ).copy(
+                // This removes the gap between the panes
+                horizontalPartitionSpacerSize = 0.dp,
+            ),
+        )
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(remoteTarget) {
@@ -110,64 +114,64 @@ fun HomeScreen(
         WindowInsets.safeDrawing.only(WindowInsetsSides.Start)
     } else WindowInsets(0)
 
-    Surface(color = MaterialTheme.colorScheme.surface) {
-        NavigableListDetailPaneScaffold(
-            navigator = navigator,
-            defaultBackBehavior = backBehavior,
-            listPane = {
-                AnimatedPane(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .consumeWindowInsets(listPaneCI)
-                        .semantics {
-                            paneTitle = "Devices list"
-                        },
-                ) {
-                    RemoteListPane(
-                        onRemoteClick = { remote ->
-                            scope.launch {
+    NavigableListDetailPaneScaffold(
+        navigator = navigator,
+        defaultBackBehavior = backBehavior,
+        listPane = {
+            AnimatedPane(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .consumeWindowInsets(listPaneCI)
+                    .semantics {
+                        paneTitle = "Devices list"
+                    },
+            ) {
+                RemoteListPane(
+                    onRemoteClick = { remote ->
+                        scope.launch {
+                            navigator.navigateTo(
+                                ListDetailPaneScaffoldRole.Detail,
+                                RemoteRoute(remote.uuid),
+                            )
+                        }
+                    },
+                    paneMode = secondaryPaneMode,
+                    onFavoriteToggle = { remote -> viewModel.toggleFavorite(remote.uuid) },
+                )
+
+            }
+        },
+        detailPane = {
+            AnimatedPane(
+                Modifier
+                    .consumeWindowInsets(detailPaneCI)
+                    .semantics {
+                        paneTitle = "Transfers list"
+                    },
+            ) {
+                val selectedUuid = navigator.currentDestination?.contentKey?.uuid
+
+                val selectedRemote by viewModel.getRemote(selectedUuid)
+                    .collectAsStateWithLifecycle(initialValue = null)
+
+                if (selectedRemote != null) {
+                    TransfersPane(
+                        remote = selectedRemote!!,
+                        paneMode = secondaryPaneMode,
+                        onBack = { scope.launch { navigator.navigateBack(backBehavior) } },
+                        onFavoriteToggle = { remote -> viewModel.toggleFavorite(selectedRemote!!.uuid) },
+                        onOpenMessagesPane = {
+                            if (!viewModel.integrateMessages) scope.launch {
                                 navigator.navigateTo(
-                                    ListDetailPaneScaffoldRole.Detail,
-                                    RemoteRoute(remote.uuid),
+                                    ListDetailPaneScaffoldRole.Extra,
+                                    RemoteRoute(selectedRemote!!.uuid),
                                 )
                             }
                         },
-                        paneMode = secondaryPaneMode,
-                        onFavoriteToggle = { remote -> viewModel.toggleFavorite(remote.uuid) },
                     )
-
-                }
-            },
-            detailPane = {
-                AnimatedPane(
-                    Modifier
-                        .consumeWindowInsets(detailPaneCI)
-                        .semantics {
-                            paneTitle = "Transfers list"
-                        },
-                ) {
-                    val selectedUuid = navigator.currentDestination?.contentKey?.uuid
-
-                    val selectedRemote by viewModel.getRemote(selectedUuid)
-                        .collectAsStateWithLifecycle(initialValue = null)
-
-                    if (selectedRemote != null) {
-                        TransfersPane(
-                            remote = selectedRemote!!,
-                            paneMode = secondaryPaneMode,
-                            onBack = { scope.launch { navigator.navigateBack(backBehavior) } },
-                            onFavoriteToggle = { remote -> viewModel.toggleFavorite(selectedRemote!!.uuid) },
-                            onOpenMessagesPane = {
-                                if (!viewModel.integrateMessages) scope.launch {
-                                    navigator.navigateTo(
-                                        ListDetailPaneScaffoldRole.Extra,
-                                        RemoteRoute(selectedRemote!!.uuid),
-                                    )
-                                }
-                            },
-                        )
-                    } else {
-                        // Placeholder for Tablet Landscape when no device is selected
+                } else {
+                    // Placeholder for Tablet Landscape when no device is selected
+                    Surface(color = MaterialTheme.colorScheme.surface) {
                         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             Text(
                                 "Please select a device",
@@ -177,32 +181,30 @@ fun HomeScreen(
                         }
                     }
                 }
-            },
-            extraPane = extraPane@{
-                if (viewModel.integrateMessages) return@extraPane
+            }
+        },
+        extraPane = extraPane@{
+            if (viewModel.integrateMessages) return@extraPane
 
-                AnimatedPane(
-                    Modifier
-                        .consumeWindowInsets(extraPaneCI)
-                        .semantics {
-                            paneTitle = "Messages history"
-                        },
-                ) {
-                    val selectedUuid = navigator.currentDestination?.contentKey?.uuid
-                    val selectedRemote by viewModel.getRemote(selectedUuid)
-                        .collectAsStateWithLifecycle(initialValue = null)
+            AnimatedPane(
+                Modifier
+                    .consumeWindowInsets(extraPaneCI)
+                    .semantics {
+                        paneTitle = "Messages history"
+                    },
+            ) {
+                val selectedUuid = navigator.currentDestination?.contentKey?.uuid
+                val selectedRemote by viewModel.getRemote(selectedUuid)
+                    .collectAsStateWithLifecycle(initialValue = null)
 
-                    if (selectedRemote?.supportsTextMessages == true) {
-                        MessagesPane(
-                            remote = selectedRemote!!,
-                            paneMode = tertiaryPaneMode,
-                            onBack = { scope.launch { navigator.navigateBack(backBehavior) } },
-                        )
-                    } else {
-                        Box(Modifier.fillMaxSize()) {}
-                    }
+                if (selectedRemote?.supportsTextMessages == true) {
+                    MessagesPane(
+                        remote = selectedRemote!!,
+                        paneMode = tertiaryPaneMode,
+                        onBack = { scope.launch { navigator.navigateBack(backBehavior) } },
+                    )
                 }
-            },
-        )
-    }
+            }
+        },
+    )
 }

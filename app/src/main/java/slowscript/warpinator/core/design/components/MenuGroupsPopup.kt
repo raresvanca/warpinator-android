@@ -1,6 +1,13 @@
 package slowscript.warpinator.core.design.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.widthIn
@@ -11,14 +18,20 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
+import androidx.xr.compose.platform.LocalSpatialCapabilities
+import androidx.xr.compose.spatial.SpatialPopup
 
 data class MenuAction(
     val title: String,
@@ -40,25 +53,76 @@ fun MenuGroupsPopup(
     properties: PopupProperties = PopupProperties(),
     minWidth: Dp? = null,
 ) {
-    DropdownMenuPopup(
-        expanded = menuOpen,
-        onDismissRequest = onDismiss,
-        offset = offset,
-        properties = properties,
-    ) {
-        val colors = MenuDefaults.itemColors(
-            textColor = MaterialTheme.colorScheme.onSecondaryContainer,
-            leadingIconColor = MaterialTheme.colorScheme.onSecondaryContainer,
-            trailingIconColor = MaterialTheme.colorScheme.onSecondaryContainer,
-        )
+    val isSpatialUiEnabled = LocalSpatialCapabilities.current.isSpatialUiEnabled
 
-        val errorColors = MenuDefaults.itemColors(
-            textColor = MaterialTheme.colorScheme.onErrorContainer,
-            leadingIconColor = MaterialTheme.colorScheme.onErrorContainer,
-            trailingIconColor = MaterialTheme.colorScheme.onErrorContainer,
-        )
+    if (isSpatialUiEnabled) {
+        if (menuOpen) {
+            SpatialPopup(
+                alignment = Alignment.TopEnd,
+                offset = IntOffset(offset.x.value.toInt(), offset.y.value.toInt()),
+                onDismissRequest = onDismiss,
+            ) {
+                val expandedState = remember { MutableTransitionState(false) }
+                expandedState.targetState = true
 
+                AnimatedVisibility(
+                    visibleState = expandedState,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically(),
+                ) {
+                    Surface(
+                        shape = MaterialTheme.shapes.extraLarge,
+                        tonalElevation = 3.dp,
+                        shadowElevation = 3.dp,
+                    ) {
+                        MenuContent(
+                            menuGroups = menuGroups,
+                            groupInteractionSource = groupInteractionSource,
+                            onDismiss = onDismiss,
+                            minWidth = minWidth,
+                        )
+                    }
+                }
+            }
+        }
+    } else {
+        DropdownMenuPopup(
+            expanded = menuOpen,
+            onDismissRequest = onDismiss,
+            offset = offset,
+            properties = properties,
+        ) {
+            MenuContent(
+                menuGroups = menuGroups,
+                groupInteractionSource = groupInteractionSource,
+                onDismiss = onDismiss,
+                minWidth = minWidth,
+            )
+        }
+    }
+}
 
+@Composable
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+private fun MenuContent(
+    menuGroups: List<MenuGroup>,
+    groupInteractionSource: MutableInteractionSource,
+    onDismiss: () -> Unit,
+    minWidth: Dp?,
+) {
+    val colors = MenuDefaults.itemColors(
+        textColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        leadingIconColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        trailingIconColor = MaterialTheme.colorScheme.onSecondaryContainer,
+    )
+
+    val errorColors = MenuDefaults.itemColors(
+        textColor = MaterialTheme.colorScheme.onErrorContainer,
+        leadingIconColor = MaterialTheme.colorScheme.onErrorContainer,
+        trailingIconColor = MaterialTheme.colorScheme.onErrorContainer,
+    )
+
+    Column {
         menuGroups.forEachIndexed { index, group ->
             DropdownMenuGroup(
                 shapes = MenuDefaults.groupShape(index, menuGroups.size),
@@ -92,7 +156,6 @@ fun MenuGroupsPopup(
                         } ?: Modifier,
                     )
                 }
-
             }
             if (index != menuGroups.size - 1) {
                 Spacer(Modifier.height(MenuDefaults.GroupSpacing))

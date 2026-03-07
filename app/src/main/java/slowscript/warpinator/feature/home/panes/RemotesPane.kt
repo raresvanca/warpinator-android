@@ -53,6 +53,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.xr.compose.material3.SpaceToggleButton
 import slowscript.warpinator.R
 import slowscript.warpinator.core.data.ServiceState
 import slowscript.warpinator.core.data.WarpinatorViewModel
@@ -154,6 +155,7 @@ fun RemoteListPaneContent(
             if (paneMode) TopAppBar(
                 title = { Text(stringResource(R.string.app_name)) },
                 actions = {
+                    SpaceToggleButton()
                     HomeMenu(
                         onManualConnectionClick = onShowManualConnectionDialog,
                         onRescan = onRescan,

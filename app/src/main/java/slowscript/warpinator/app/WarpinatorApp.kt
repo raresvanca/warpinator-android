@@ -21,6 +21,15 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.xr.compose.material3.EnableXrComponentOverrides
+import androidx.xr.compose.material3.ExperimentalMaterial3XrApi
+import androidx.xr.compose.platform.LocalSpatialCapabilities
+import androidx.xr.compose.spatial.Subspace
+import androidx.xr.compose.subspace.MovePolicy
+import androidx.xr.compose.subspace.ResizePolicy
+import androidx.xr.compose.subspace.SpatialPanel
+import androidx.xr.compose.subspace.layout.SubspaceModifier
+import androidx.xr.compose.subspace.layout.fillMaxSize
 import slowscript.warpinator.feature.about.AboutScreen
 import slowscript.warpinator.feature.home.HomeScreen
 import slowscript.warpinator.feature.settings.SettingsScreen
@@ -29,13 +38,16 @@ val LocalNavController = staticCompositionLocalOf<NavController?> {
     null
 }
 
+@OptIn(ExperimentalMaterial3XrApi::class)
 @Composable
 fun WarpinatorApp(
     navController: NavHostController,
 ) {
     var remoteTarget by remember { mutableStateOf<Pair<String, Boolean>?>(null) }
+    val isSpatialUiEnabled = LocalSpatialCapabilities.current.isSpatialUiEnabled
 
-    Surface(color = MaterialTheme.colorScheme.surface) {
+    @Composable
+    fun WarpinatorNavigator() {
         CompositionLocalProvider(LocalNavController provides navController) {
             Box(Modifier.fillMaxSize()) {
                 WarpinatorIntentHandler(
@@ -89,4 +101,23 @@ fun WarpinatorApp(
             }
         }
     }
+
+    if (isSpatialUiEnabled) {
+        Subspace {
+            SpatialPanel(
+                modifier = SubspaceModifier.fillMaxSize(),
+                dragPolicy = MovePolicy(),
+                resizePolicy = ResizePolicy(),
+            ) {
+                EnableXrComponentOverrides {
+                    WarpinatorNavigator()
+                }
+            }
+        }
+    } else {
+        Surface(color = MaterialTheme.colorScheme.surface) {
+            WarpinatorNavigator()
+        }
+    }
+
 }
