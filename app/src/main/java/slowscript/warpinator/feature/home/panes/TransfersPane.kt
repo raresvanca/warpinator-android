@@ -1,6 +1,8 @@
 package slowscript.warpinator.feature.home.panes
 
+import android.content.ClipDescription
 import android.net.Uri
+import android.view.KeyEvent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -47,6 +49,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draganddrop.toAndroidDragEvent
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.isShiftPressed
+import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -63,12 +70,18 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import slowscript.warpinator.R
 import slowscript.warpinator.core.data.WarpinatorViewModel
+import slowscript.warpinator.core.design.components.DragAndDropUiMode
+import slowscript.warpinator.core.design.components.FileDropTargetIndicator
 import slowscript.warpinator.core.design.components.TooltipIconButton
+import slowscript.warpinator.core.design.components.fileDropTarget
+import slowscript.warpinator.core.design.components.rememberDropTargetState
+import slowscript.warpinator.core.design.components.rememberShortcutLabelText
 import slowscript.warpinator.core.design.theme.WarpinatorTheme
 import slowscript.warpinator.core.model.Message
 import slowscript.warpinator.core.model.Remote
 import slowscript.warpinator.core.model.Transfer
 import slowscript.warpinator.core.notification.components.NotificationInhibitor
+import slowscript.warpinator.core.utils.KeyboardShortcuts
 import slowscript.warpinator.feature.home.components.MessageListItem
 import slowscript.warpinator.feature.home.components.RemoteLargeFlexibleTopAppBar
 import slowscript.warpinator.feature.home.components.SendMessageDialog
@@ -150,9 +163,65 @@ private fun TransferPaneContent(
         }
     }
 
+    val fileDropTargetState = rememberDropTargetState(
+        onUrisDropped = { uris ->
+            onSendUris(uris, false)
+            true
+        },
+        shouldStartDragAndDrop = shouldStartDragAndDrop@{ event ->
+            val description =
+                event.toAndroidDragEvent().clipDescription ?: return@shouldStartDragAndDrop false
+            (0 until description.mimeTypeCount).any { mimeType ->
+                description.getMimeType(mimeType) !in setOf(
+                    ClipDescription.MIMETYPE_TEXT_PLAIN,
+                    ClipDescription.MIMETYPE_TEXT_HTML,
+                    ClipDescription.MIMETYPE_TEXT_INTENT,
+                )
+            }
+        },
+    )
+
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     var showMessageDialog by rememberSaveable { mutableStateOf(false) }
+
+    KeyboardShortcuts { event ->
+        when {
+            event.isCtrlPressed && event.key == Key.One || event.isCtrlPressed && event.key == Key.O -> {
+                filePicker.launch(arrayOf("*/*"))
+                true
+            }
+
+            event.isCtrlPressed && event.key == Key.Two || event.isCtrlPressed && event.isShiftPressed && event.key == Key.O -> {
+                folderPicker.launch(null)
+                true
+            }
+
+            event.isCtrlPressed && event.key == Key.Three || event.isCtrlPressed && event.key == Key.M -> {
+                if (integrateMessages) showMessageDialog = true
+                else onOpenMessagesPane()
+
+                true
+            }
+
+            event.isCtrlPressed && event.key == Key.D -> {
+                onFavoriteToggle(remote)
+                true
+            }
+
+            event.isCtrlPressed && event.isShiftPressed && event.key == Key.R -> {
+                onReconnect(remote)
+                true
+            }
+
+            event.isCtrlPressed && event.isShiftPressed && event.key == Key.Delete -> {
+                onClearTransfers(remote.uuid)
+                true
+            }
+
+            else -> false
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -175,7 +244,10 @@ private fun TransferPaneContent(
                             onClearTransfers(remote.uuid)
                         },
                         icon = Icons.Rounded.ClearAll,
-                        description = stringResource(R.string.clear_transfer_history_label),
+                        description = rememberShortcutLabelText(
+                            KeyEvent.KEYCODE_DEL, ctrl = true, shift = true,
+                            text = stringResource(R.string.clear_transfer_history_label),
+                        ),
                     )
 
                     val favouriteButtonSemanticState = if (isFavoriteOverride
@@ -187,10 +259,13 @@ private fun TransferPaneContent(
                         icon = if (isFavoriteOverride
                                 ?: remote.isFavorite
                         ) Icons.Rounded.Star else Icons.Rounded.StarBorder,
-                        description = if (isFavoriteOverride
-                                ?: remote.isFavorite
-                        ) stringResource(R.string.remove_from_favorites_label) else stringResource(
-                            R.string.add_to_favorites_label,
+                        description = rememberShortcutLabelText(
+                            KeyEvent.KEYCODE_D, ctrl = true,
+                            text = if (isFavoriteOverride
+                                    ?: remote.isFavorite
+                            ) stringResource(R.string.remove_from_favorites_label) else stringResource(
+                                R.string.add_to_favorites_label,
+                            ),
                         ),
                         modifier = Modifier.semantics {
                             stateDescription = favouriteButtonSemanticState
@@ -205,7 +280,10 @@ private fun TransferPaneContent(
                     if (!integrateMessages) TooltipIconButton(
                         onClick = onOpenMessagesPane,
                         icon = Icons.AutoMirrored.Rounded.Message,
-                        description = stringResource(R.string.messages),
+                        description = rememberShortcutLabelText(
+                            keyCode = KeyEvent.KEYCODE_M, ctrl = true,
+                            text = stringResource(R.string.messages),
+                        ),
                         enabled = remote.supportsTextMessages,
                         addBadge = remote.hasUnreadMessages,
                     )
@@ -243,7 +321,8 @@ private fun TransferPaneContent(
                 .nestedScroll(scrollBehavior.nestedScrollConnection)
                 .semantics {
                     contentDescription = listContentDescription
-                },
+                }
+                .fileDropTarget(fileDropTargetState),
         ) {
 
             item {
@@ -252,6 +331,17 @@ private fun TransferPaneContent(
                     transfers.size,
                     if (integrateMessages) remote.messages.size else null,
                 ) { onReconnect(remote) }
+            }
+
+            if (fileDropTargetState.uiMode != DragAndDropUiMode.None) {
+                item {
+                    FileDropTargetIndicator(
+                        fileDropTargetState.uiMode,
+                        text = stringResource(R.string.drop_here_to_send),
+                        modifier = Modifier.fillParentMaxSize(),
+                    )
+                }
+                return@LazyColumn
             }
 
             if ((transfers.isEmpty() && !integrateMessages) || (transfers.isEmpty() && remote.messages.isEmpty())) {

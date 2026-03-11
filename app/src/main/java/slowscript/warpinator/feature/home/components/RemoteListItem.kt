@@ -1,5 +1,9 @@
 package slowscript.warpinator.feature.home.components
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -14,6 +18,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
+import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.rounded.StarBorder
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItemDefaults
@@ -26,6 +32,7 @@ import androidx.compose.material3.SwipeToDismissBoxState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -45,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import slowscript.warpinator.R
 import slowscript.warpinator.core.design.components.DynamicAvatarCircle
+import slowscript.warpinator.core.design.components.TooltipIconButton
 import slowscript.warpinator.core.design.shapes.segmentedDynamicShapes
 import slowscript.warpinator.core.design.theme.WarpinatorTheme
 import slowscript.warpinator.core.model.Remote
@@ -80,6 +88,15 @@ fun RemoteListItem(
         else -> stringResource(R.string.remote_connected)
     }
 
+    val tileInteractionSource = remember { MutableInteractionSource() }
+    val buttonInteractionSource = remember { MutableInteractionSource() }
+
+    val isTileHovered by tileInteractionSource.collectIsHoveredAsState()
+    val isTileFocused by tileInteractionSource.collectIsFocusedAsState()
+    val isButtonHovered by buttonInteractionSource.collectIsHoveredAsState()
+    val isButtonPressed by buttonInteractionSource.collectIsPressedAsState()
+
+    val showFavoriteAction = isTileHovered || isTileFocused || isButtonHovered || isButtonPressed
 
     val accessibilityState = remember(isFavorite, isError, isConnecting, isDisconnected) {
         buildString {
@@ -144,8 +161,23 @@ fun RemoteListItem(
                         )
                     },
                     trailingContent = {
-                        Icon(Icons.Rounded.ChevronRight, contentDescription = null)
+                        if (showFavoriteAction) {
+                            TooltipIconButton(
+                                description = if (remote.isFavorite) stringResource(R.string.remove_from_favorites_label) else stringResource(
+                                    R.string.add_to_favorites_label,
+                                ),
+                                onClick = {
+                                    haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+                                    onFavoriteToggle()
+                                },
+                                icon = if (isFavorite) Icons.Rounded.Star else Icons.Rounded.StarBorder,
+                                interactionSource = buttonInteractionSource,
+                            )
+                        } else {
+                            Icon(Icons.Rounded.ChevronRight, contentDescription = null)
+                        }
                     },
+                    interactionSource = tileInteractionSource,
                 )
             },
         )

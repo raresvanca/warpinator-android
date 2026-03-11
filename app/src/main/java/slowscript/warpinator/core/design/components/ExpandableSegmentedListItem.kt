@@ -5,6 +5,7 @@ import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -63,6 +64,7 @@ fun ExpandableSegmentedListItem(
     subItemBuilder: @Composable (
         subItemIndex: Int, containerColor: Color, shape: Shape,
     ) -> Unit,
+    interactionSource: MutableInteractionSource? = null,
 ) {
     val motionScheme = MaterialTheme.motionScheme
 
@@ -114,6 +116,7 @@ fun ExpandableSegmentedListItem(
             },
             content = content,
             supportingContent = supportingContent,
+            interactionSource = interactionSource,
         )
         AnimatedVisibility(
             visible = isExpanded,

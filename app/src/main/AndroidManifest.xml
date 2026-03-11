@@ -54,7 +54,10 @@
             android:exported="true"
             android:launchMode="singleTask"
             android:theme="@style/Theme.Warpinator"
-            android:windowSoftInputMode="adjustResize">
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|density"
+            android:resizeableActivity="true"
+            android:windowSoftInputMode="adjustResize"
+            tools:targetApi="24">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -78,6 +81,10 @@
 
                 <data android:mimeType="*/*" />
             </intent-filter>
+
+            <meta-data
+                android:name="WindowManagerPreference:SuppressWindowControlNavigationButton"
+                android:value="true" />
         </activity>
 
         <receiver

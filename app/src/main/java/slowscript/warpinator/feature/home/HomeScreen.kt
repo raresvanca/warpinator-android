@@ -181,6 +181,12 @@ fun HomeScreen(
             extraPane = extraPane@{
                 if (viewModel.integrateMessages) return@extraPane
 
+                val selectedUuid = navigator.currentDestination?.contentKey?.uuid
+                val selectedRemote by viewModel.getRemote(selectedUuid)
+                    .collectAsStateWithLifecycle(initialValue = null)
+
+                if (selectedRemote?.supportsTextMessages != true) return@extraPane
+
                 AnimatedPane(
                     Modifier
                         .consumeWindowInsets(extraPaneCI)
@@ -188,19 +194,11 @@ fun HomeScreen(
                             paneTitle = "Messages history"
                         },
                 ) {
-                    val selectedUuid = navigator.currentDestination?.contentKey?.uuid
-                    val selectedRemote by viewModel.getRemote(selectedUuid)
-                        .collectAsStateWithLifecycle(initialValue = null)
-
-                    if (selectedRemote?.supportsTextMessages == true) {
-                        MessagesPane(
-                            remote = selectedRemote!!,
-                            paneMode = tertiaryPaneMode,
-                            onBack = { scope.launch { navigator.navigateBack(backBehavior) } },
-                        )
-                    } else {
-                        Box(Modifier.fillMaxSize()) {}
-                    }
+                    MessagesPane(
+                        remote = selectedRemote!!,
+                        paneMode = tertiaryPaneMode,
+                        onBack = { scope.launch { navigator.navigateBack(backBehavior) } },
+                    )
                 }
             },
         )

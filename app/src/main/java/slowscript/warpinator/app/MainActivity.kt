@@ -11,18 +11,28 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.input.key.KeyEvent
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
 import slowscript.warpinator.core.data.ThemeViewModel
 import slowscript.warpinator.core.design.theme.WarpinatorTheme
 import slowscript.warpinator.core.service.MainService
+import slowscript.warpinator.core.utils.KeyShortcutDispatcher
+import slowscript.warpinator.core.utils.LocalKeyShortcutDispatcher
 import slowscript.warpinator.core.utils.Utils
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    val keyShortcutDispatcher = KeyShortcutDispatcher()
+
+    override fun onKeyDown(keyCode: Int, event: android.view.KeyEvent?): Boolean {
+        if (event != null && keyShortcutDispatcher.dispatch(KeyEvent(event))) return true
+        return super.onKeyDown(keyCode, event)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,7 +78,11 @@ class MainActivity : ComponentActivity() {
                 darkTheme = isDark,
                 dynamicColor = useDynamicColors,
             ) {
-                WarpinatorApp(navController)
+                CompositionLocalProvider(
+                    LocalKeyShortcutDispatcher provides keyShortcutDispatcher,
+                ) {
+                    WarpinatorApp(navController)
+                }
             }
         }
     }

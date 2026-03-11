@@ -78,6 +78,7 @@
         <item quantity="other">%1$d de mesaje</item>
     </plurals>
     <string name="send_message_dialog_title">Trimite un mesaj</string>
+    <string name="drop_here_to_send">Plasează aici pentru a trimite</string>
     <string name="manual_connect_text">Scanează codul QR de mai sus cu camera și deschide linkul sau folosește următoarea adresă pentru a iniția conexiunea de pe celălalt dispozitiv:</string>
     <string name="manual_connection_success_label">Dispozitiv conectat</string>
     <string name="manual_connection_connecting_title">Se conectează la</string>
@@ -153,6 +154,7 @@
     <string name="integrate_messages_with_transfers_subtitle_off">Mesajele și transferurile sunt păstrate în secțiuni separate</string>
     <string name="change_profile_picture_title">Schimbă poza de profil</string>
     <string name="failed_to_save_profile_picture">Salvarea pozei de profil a eșuat: %1$s</string>
+    <string name="drop_image_here_to_set">Plasează imaginea aici pentru a seta</string>
     <string name="warpinator_notification_title">Serviciul Warpinator rulează</string>
     <string name="warpinator_notification_button">Oprește serviciul</string>
     <string name="transfer_notification">%1$.1f%%, %2$d transferuri, %3$s/s</string>

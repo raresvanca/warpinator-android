@@ -1,5 +1,10 @@
 package slowscript.warpinator.feature.settings.components
 
+import android.content.Intent
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -17,19 +22,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -40,6 +43,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draganddrop.toAndroidDragEvent
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -53,6 +57,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import slowscript.warpinator.R
+import slowscript.warpinator.core.design.components.FileDropTargetIndicator
+import slowscript.warpinator.core.design.components.fileDropTarget
+import slowscript.warpinator.core.design.components.rememberDropTargetState
 import slowscript.warpinator.core.utils.ProfilePicturePainter
 
 /**
@@ -73,11 +80,43 @@ fun ProfilePictureDialog(
     currentKey: String,
     onDismiss: () -> Unit,
     onSelectKey: (String) -> Unit,
-    onSelectCustom: () -> Unit,
+    onSelectCustom: (Uri) -> Unit,
     imageSignature: Long,
 ) {
     var selectedKey by remember { mutableStateOf<String>(currentKey) }
     val context = LocalContext.current
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+    ) { uri: Uri? ->
+        if (uri != null) {
+            try {
+                context.contentResolver.takePersistableUriPermission(
+                    uri, Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                )
+            } catch (_: Exception) {
+                // Ignore if specific permission grant fails (file might still be readable once)
+            }
+            onSelectCustom(uri)
+        }
+    }
+
+    val fileDropTargetState = rememberDropTargetState(
+        onUrisDropped = onUrisDropped@{ uris ->
+            if (uris.size != 1) return@onUrisDropped false
+            onSelectCustom(uris.first())
+            true
+        },
+        shouldStartDragAndDrop = shouldStartDragAndDrop@{ event ->
+            val description =
+                event.toAndroidDragEvent().clipDescription ?: return@shouldStartDragAndDrop false
+            return@shouldStartDragAndDrop when {
+                description.mimeTypeCount != 1 -> false
+                description.hasMimeType("image/*") -> true
+                else -> false
+            }
+        },
+    )
 
     LaunchedEffect(imageSignature) {
         if (imageSignature > 0 && selectedKey != "profilePic.png") {
@@ -123,20 +162,19 @@ fun ProfilePictureDialog(
             Box(
                 modifier = Modifier
                     .padding(innerPadding)
-                    .fillMaxSize(),
+                    .fillMaxSize()
+                    .fileDropTarget(fileDropTargetState),
                 contentAlignment = Alignment.TopCenter
             ) {
-                Card(
+                Surface(
                     modifier = Modifier
                         .padding(
                             top = 160.dp, start = 16.dp, end = 16.dp, bottom = 32.dp
                         )
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(24.dp)),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                    )
+                        .clip(MaterialTheme.shapes.extraLarge),
+                    shape = MaterialTheme.shapes.extraLarge,
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 ) {
                     LazyVerticalGrid(
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -149,11 +187,17 @@ fun ProfilePictureDialog(
                         item {
                             Box(contentAlignment = Alignment.Center) {
                                 FilledIconButton(
-                                    onClick = onSelectCustom,
+                                    onClick = {
+                                        imagePickerLauncher.launch(
+                                            PickVisualMediaRequest(
+                                                ActivityResultContracts.PickVisualMedia.ImageOnly,
+                                            ),
+                                        )
+                                    },
                                     shape = CircleShape,
                                     modifier = Modifier
                                         .height(64.dp)
-                                        .aspectRatio(1f)
+                                        .aspectRatio(1f),
                                 ) {
                                     Icon(
                                         Icons.Default.AddPhotoAlternate,
@@ -207,8 +251,12 @@ fun ProfilePictureDialog(
                                 }
                             }
                         }
-
                     }
+                    FileDropTargetIndicator(
+                        fileDropTargetState.uiMode,
+                        text = stringResource(R.string.drop_image_here_to_set),
+                        modifier = Modifier.fillMaxSize(),
+                    )
                 }
                 Box(
                     modifier = Modifier.offset(y = (80).dp), contentAlignment = Alignment.Center

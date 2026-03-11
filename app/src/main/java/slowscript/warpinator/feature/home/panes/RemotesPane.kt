@@ -45,7 +45,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.isAltPressed
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -60,14 +65,17 @@ import slowscript.warpinator.core.design.components.MessagesHandlerEffect
 import slowscript.warpinator.core.design.shapes.WarpinatorRoundedIconOutlineShape
 import slowscript.warpinator.core.design.theme.WarpinatorTheme
 import slowscript.warpinator.core.model.Remote
+import slowscript.warpinator.core.utils.KeyboardShortcuts
 import slowscript.warpinator.feature.home.components.HomeMenu
 import slowscript.warpinator.feature.home.components.RemoteListItem
 import slowscript.warpinator.feature.manual_connection.ManualConnectionDialog
 
-
 private enum class RemoteListUiState {
     Normal, Empty, Starting, Stopping, FailedToStart, NetworkChangeRestart
 }
+
+const val CONNECTION_ISSUES_HELP_URL =
+    "https://slowscript.xyz/warpinator-android/connection-issues/"
 
 @OptIn(
     ExperimentalMaterial3Api::class,
@@ -147,6 +155,34 @@ fun RemoteListPaneContent(
         filteredRemotes.isEmpty() -> RemoteListUiState.Empty
         else -> RemoteListUiState.Normal
     })
+
+    val uriHandler = LocalUriHandler.current
+
+    KeyboardShortcuts { event ->
+        when {
+            event.isCtrlPressed && event.key == Key.K -> {
+                onShowManualConnectionDialog()
+                true
+            }
+
+            event.isCtrlPressed && event.key == Key.R -> {
+                onRescan()
+                true
+            }
+
+            event.isCtrlPressed && event.isAltPressed && event.key == Key.R -> {
+                onReannounce()
+                true
+            }
+
+            event.key == Key.F1 -> {
+                uriHandler.openUri(CONNECTION_ISSUES_HELP_URL)
+                true
+            }
+
+            else -> false
+        }
+    }
 
     Scaffold(
         snackbarHost = { snackbarHostState?.let { SnackbarHost(it) } },

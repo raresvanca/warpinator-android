@@ -37,6 +37,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
@@ -183,11 +189,29 @@ private fun MessagesPaneContent(
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    val sendingEnabled =
+                        messageText.isNotBlank() && remote.status == RemoteStatus.Connected && remote.supportsTextMessages
+                    val onSend = {
+                        if (messageText.isNotBlank()) {
+                            onSendMessage(messageText)
+                            messageText = ""
+                        }
+                    }
+
                     TextField(
                         value = messageText,
                         onValueChange = { messageText = it },
                         placeholder = { Text(stringResource(R.string.message_text_field_placeholder)) },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .onPreviewKeyEvent { event ->
+                                if (event.isCtrlPressed && event.key == Key.Enter && event.type == KeyEventType.KeyDown && sendingEnabled) {
+                                    onSend()
+                                    true // consumed, does NOT insert newline
+                                } else {
+                                    false // let Enter fall through to insert newline normally
+                                }
+                            },
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = Color.Transparent,
                             unfocusedContainerColor = Color.Transparent,
@@ -199,9 +223,6 @@ private fun MessagesPaneContent(
                         maxLines = 3,
                     )
 
-                    val sendingEnabled =
-                        messageText.isNotBlank() && remote.status == RemoteStatus.Connected && remote.supportsTextMessages
-
                     val sendButtonClickLabel = stringResource(R.string.send_action)
                     val sendButtonStateDescription = when {
                         !remote.supportsTextMessages -> stringResource(R.string.device_does_not_support_text_messages_state)
@@ -212,12 +233,7 @@ private fun MessagesPaneContent(
 
 
                     IconButton(
-                        onClick = {
-                            if (messageText.isNotBlank()) {
-                                onSendMessage(messageText)
-                                messageText = ""
-                            }
-                        },
+                        onClick = onSend,
                         enabled = sendingEnabled,
                         modifier = Modifier.semantics {
                             onClick(sendButtonClickLabel, null)

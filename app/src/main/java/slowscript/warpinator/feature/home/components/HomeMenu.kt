@@ -2,6 +2,7 @@ package slowscript.warpinator.feature.home.components
 
 import android.app.Activity
 import android.net.Uri
+import android.view.KeyEvent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -39,7 +40,7 @@ import slowscript.warpinator.core.design.components.MenuAction
 import slowscript.warpinator.core.design.components.MenuGroup
 import slowscript.warpinator.core.design.components.MenuGroupsPopup
 import slowscript.warpinator.core.design.components.TooltipIconButton
-
+import slowscript.warpinator.feature.home.panes.CONNECTION_ISSUES_HELP_URL
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -50,7 +51,6 @@ fun HomeMenu(
     onReannounce: () -> Unit,
     onSaveLog: (uri: Uri) -> Unit,
 ) {
-    val helpUrl = "https://slowscript.xyz/warpinator-android/connection-issues/"
     val uriHandler = LocalUriHandler.current
 
     val saveLocationPicker = rememberLauncherForActivityResult(
@@ -75,23 +75,31 @@ fun HomeMenu(
                     stringResource(R.string.manual_connection_label),
                     trailingIcon = Icons.Rounded.AddLink,
                     onClick = onManualConnectionClick,
+                    shortcutKeyCode = KeyEvent.KEYCODE_K,
+                    shortcutKeyCtrl = true,
                 ),
                 MenuAction(
                     stringResource(R.string.reannounce_label),
                     trailingIcon = Icons.Rounded.WifiTethering,
                     onClick = onReannounce,
+                    shortcutKeyCode = KeyEvent.KEYCODE_R,
+                    shortcutKeyCtrl = true,
+                    shortcutKeyAlt = true,
                 ),
                 MenuAction(
                     stringResource(R.string.rescan_label),
                     trailingIcon = Icons.Rounded.Refresh,
                     onClick = onRescan,
+                    shortcutKeyCode = KeyEvent.KEYCODE_R,
+                    shortcutKeyCtrl = true,
                 ),
                 MenuAction(
                     stringResource(R.string.connection_issues_label),
                     trailingIcon = Icons.AutoMirrored.Rounded.MenuBook,
                     onClick = {
-                        uriHandler.openUri(helpUrl)
+                        uriHandler.openUri(CONNECTION_ISSUES_HELP_URL)
                     },
+                    shortcutKeyCode = KeyEvent.KEYCODE_F1,
                 ),
             ),
         ),

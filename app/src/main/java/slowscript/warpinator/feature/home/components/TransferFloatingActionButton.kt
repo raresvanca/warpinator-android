@@ -1,6 +1,8 @@
 package slowscript.warpinator.feature.home.components
 
+import android.view.KeyEvent
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Column
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.FilePresent
@@ -36,6 +38,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.tooling.preview.Preview
 import slowscript.warpinator.R
+import slowscript.warpinator.core.design.components.ShortcutLabel
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -103,17 +106,38 @@ fun TransferFloatingActionButton(
                 onSendMessage()
                 isMenuExpanded = false
             },
-            text = { Text(sendMessageLabel) },
+            text = {
+                Column {
+                    Text(sendMessageLabel)
+                    ShortcutLabel(
+                        KeyEvent.KEYCODE_3, ctrl = true,
+                    )
+                }
+            },
             icon = { Icon(Icons.Rounded.ModeComment, contentDescription = null) },
         )
         FloatingActionButtonMenuItem(
             onClick = onSendFolder,
-            text = { Text(sendFolderLabel) },
+            text = {
+                Column {
+                    Text(sendFolderLabel)
+                    ShortcutLabel(
+                        KeyEvent.KEYCODE_2, ctrl = true,
+                    )
+                }
+            },
             icon = { Icon(Icons.Rounded.Folder, contentDescription = null) },
         )
         FloatingActionButtonMenuItem(
             onClick = onSendFile,
-            text = { Text(sendFileLabel) },
+            text = {
+                Column {
+                    Text(sendFileLabel)
+                    ShortcutLabel(
+                        KeyEvent.KEYCODE_1, ctrl = true,
+                    )
+                }
+            },
             icon = { Icon(Icons.Rounded.FilePresent, contentDescription = null) },
         )
 

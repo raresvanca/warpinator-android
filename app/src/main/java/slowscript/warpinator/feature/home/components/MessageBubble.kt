@@ -32,6 +32,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.isSecondaryPressed
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.toClipEntry
@@ -40,12 +44,6 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.LinkAnnotation
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextLinkStyles
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.withLink
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
@@ -58,6 +56,7 @@ import slowscript.warpinator.core.design.components.MenuGroupsPopup
 import slowscript.warpinator.core.design.theme.WarpinatorTheme
 import slowscript.warpinator.core.model.Message
 import slowscript.warpinator.core.model.Transfer
+import slowscript.warpinator.core.utils.rememberAnnotatedLinkText
 import java.util.Date
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -91,40 +90,24 @@ fun MessageBubble(message: Message, onDeleteMessage: () -> Unit = {}) {
         DateFormat.getTimeFormat(context).format(Date(message.timestamp))
     }
 
-    val annotatedMessage = remember(message.text) {
-        buildAnnotatedString {
-            // Catch urls
-            val urlRegex = "(https?://[a-zA-Z0-9./_?&=-]+)".toRegex()
-            var lastIndex = 0
-
-            urlRegex.findAll(message.text).forEach { match ->
-                append(message.text.substring(lastIndex, match.range.first))
-
-                withLink(
-                    LinkAnnotation.Url(
-                        url = match.value,
-                        styles = TextLinkStyles(
-
-                            style = SpanStyle(
-                                textDecoration = TextDecoration.Underline,
-                                color = accentColor,
-                            ),
-                        ),
-                    ),
-                ) {
-                    append(match.value)
-                }
-
-                lastIndex = match.range.last + 1
-            }
-            append(message.text.substring(lastIndex))
-        }
-    }
+    val annotatedMessage = rememberAnnotatedLinkText(message.text, accentColor)
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent(PointerEventPass.Initial)
+
+                        if (event.type == PointerEventType.Press && event.buttons.isSecondaryPressed) {
+                            showMenu = true
+                            event.changes.forEach { it.consume() }
+                        }
+                    }
+                }
+            }
             .combinedClickable(
                 onClick = { showTimestamp = !showTimestamp },
                 onLongClick = { showMenu = true },

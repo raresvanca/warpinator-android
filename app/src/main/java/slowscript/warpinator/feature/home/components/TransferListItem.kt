@@ -1,5 +1,9 @@
 package slowscript.warpinator.feature.home.components
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -174,6 +178,16 @@ fun TransferListItem(
         }
     }
 
+    val tileInteractionSource = remember { MutableInteractionSource() }
+    val clearInteractionSource = remember { MutableInteractionSource() }
+
+    val isTileHovered by tileInteractionSource.collectIsHoveredAsState()
+    val isTileFocused by tileInteractionSource.collectIsFocusedAsState()
+    val isButtonHovered by clearInteractionSource.collectIsHoveredAsState()
+    val isButtonPressed by clearInteractionSource.collectIsPressedAsState()
+
+    val showClearAction = isTileHovered || isTileFocused || isButtonHovered || isButtonPressed
+
 
     SwipeToDismissBox(
         state = swipeToDismissState,
@@ -221,6 +235,15 @@ fun TransferListItem(
                 },
                 trailingContent = {
                     Row {
+                        if (showClearAction && uiState.allowDismiss) {
+                            TooltipIconButton(
+                                onClick = { onDelete() },
+                                icon = Icons.Rounded.Delete,
+                                description = stringResource(R.string.delete_transfer_action),
+                                interactionSource = clearInteractionSource,
+                            )
+                        }
+
                         when (uiState.actionButtons) {
                             TransferUiActionButtons.AcceptAndDecline -> {
                                 TooltipIconButton(
@@ -446,6 +469,7 @@ fun TransferListItem(
                 listItemModifier = Modifier.semantics {
                     customActions = semanticCustomActions
                 },
+                interactionSource = tileInteractionSource,
             )
         },
     )

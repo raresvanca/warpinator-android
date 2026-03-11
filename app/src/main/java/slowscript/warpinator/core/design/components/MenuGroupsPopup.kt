@@ -1,6 +1,7 @@
 package slowscript.warpinator.core.design.components
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.widthIn
@@ -24,6 +25,10 @@ data class MenuAction(
     val title: String,
     val trailingIcon: ImageVector? = null,
     val leadingIcon: ImageVector? = null,
+    val shortcutKeyCode: Int? = null,
+    val shortcutKeyCtrl: Boolean = false,
+    val shortcutKeyShift: Boolean = false,
+    val shortcutKeyAlt: Boolean = false,
     val onClick: () -> Unit,
 )
 
@@ -67,7 +72,19 @@ fun MenuGroupsPopup(
             ) {
                 group.actions.forEach { action ->
                     DropdownMenuItem(
-                        text = { Text(action.title) },
+                        text = {
+                            Column {
+                                Text(action.title)
+                                if (action.shortcutKeyCode != null) {
+                                    ShortcutLabel(
+                                        action.shortcutKeyCode,
+                                        action.shortcutKeyCtrl,
+                                        action.shortcutKeyShift,
+                                        action.shortcutKeyAlt,
+                                    )
+                                }
+                            }
+                        },
                         leadingIcon = action.leadingIcon?.let { leadingIcon ->
                             {
                                 Icon(

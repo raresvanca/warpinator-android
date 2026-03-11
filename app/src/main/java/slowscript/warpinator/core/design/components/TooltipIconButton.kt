@@ -1,5 +1,6 @@
 package slowscript.warpinator.core.design.components
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -23,6 +24,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 fun TooltipIconButton(
     description: String,
     modifier: Modifier = Modifier,
+    interactionSource: MutableInteractionSource? = null,
     enabled: Boolean = true,
     onClick: () -> Unit,
     icon: ImageVector,
@@ -34,7 +36,12 @@ fun TooltipIconButton(
         tooltip = { PlainTooltip { Text(description) } },
         state = rememberTooltipState(),
     ) {
-        IconButton(onClick = onClick, enabled = enabled, modifier = modifier) {
+        IconButton(
+            onClick = onClick,
+            enabled = enabled,
+            modifier = modifier,
+            interactionSource = interactionSource,
+        ) {
             BadgedBox(
                 badge = {
                     if (addBadge) {

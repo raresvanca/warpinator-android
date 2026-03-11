@@ -4,7 +4,6 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -88,23 +87,6 @@ fun SettingsScreen(
             }
         }
 
-    val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia(),
-    ) { uri: Uri? ->
-        if (uri != null) {
-            // Take permission to read the file
-            try {
-                context.contentResolver.takePersistableUriPermission(
-                    uri, Intent.FLAG_GRANT_READ_URI_PERMISSION,
-                )
-            } catch (_: Exception) {
-                // Ignore if specific permission grant fails (file might still be readable once)
-            }
-            // Pass to ViewModel for processing
-            viewModel.handleCustomProfilePicture(uri)
-        }
-    }
-
     // Auto-launch picker if requested via Intent
     LaunchedEffect(Unit) {
         if (launchDirPicker) dirPickerLauncher.launch(null)
@@ -116,9 +98,7 @@ fun SettingsScreen(
         onBackClick = { navController?.popBackStack() },
         onDisplayNameChange = viewModel::setDisplayName,
         onProfilePictureChange = viewModel::setProfilePicture,
-        onPickCustomProfilePicture = {
-            imagePickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-        },
+        onPickCustomProfilePicture = viewModel::handleCustomProfilePicture,
         onPickDownloadDir = { dirPickerLauncher.launch(null) },
         onResetDownloadDir = viewModel::resetDirectory,
         onNotifyIncomingChange = viewModel::setNotifyIncoming,
@@ -146,7 +126,7 @@ fun SettingsScreenContent(
     onBackClick: () -> Unit,
     onDisplayNameChange: (String) -> Unit,
     onProfilePictureChange: (String) -> Unit,
-    onPickCustomProfilePicture: () -> Unit,
+    onPickCustomProfilePicture: (Uri) -> Unit,
     onPickDownloadDir: () -> Unit,
     onResetDownloadDir: () -> Unit,
     onNotifyIncomingChange: (Boolean) -> Unit,
@@ -412,6 +392,7 @@ fun SettingsScreenContent(
                 SettingsCategoryLabel(stringResource(R.string.aspect_settings_category))
 
                 val themeLabelResId = state.themeMode.label
+                val dynamicColorsSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
                 SwitchListItem(
                     title = stringResource(R.string.integrate_messages_with_transfers_title),
@@ -440,6 +421,7 @@ fun SettingsScreenContent(
                     onCheckedChange = onUseDynamicColorsChange,
                     shapes = ListItemDefaults.segmentedDynamicShapes(2, 3),
                     colors = listItemColors,
+                    enabled = dynamicColorsSupported,
                 )
 
                 Spacer(Modifier.height(32.dp))
@@ -455,9 +437,7 @@ fun SettingsScreenContent(
                 onProfilePictureChange(it)
                 showProfileDialog = false
             },
-            onSelectCustom = {
-                onPickCustomProfilePicture()
-            },
+            onSelectCustom = onPickCustomProfilePicture,
             imageSignature = state.profileImageSignature,
         )
     } else if (showEditDialog) {

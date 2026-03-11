@@ -125,6 +125,7 @@
         <item quantity="other">%1$d messages</item>
     </plurals>
     <string name="send_message_dialog_title">Send a message</string>
+    <string name="drop_here_to_send">Drop here to send</string>
 
 
     <!-- ==================== Manual Connection ==================== -->
@@ -230,6 +231,7 @@
     <string name="integrate_messages_with_transfers_subtitle_off">Messages and transfers are being kept in separate views</string>
     <string name="change_profile_picture_title">Change profile picture</string>
     <string name="failed_to_save_profile_picture">Failed to save profile picture: %1$s</string>
+    <string name="drop_image_here_to_set">Drop image here to set</string>
 
 
     <!-- ==================== Notification ==================== -->

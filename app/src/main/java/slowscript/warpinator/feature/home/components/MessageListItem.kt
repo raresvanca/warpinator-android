@@ -3,6 +3,10 @@ package slowscript.warpinator.feature.home.components
 import android.content.ClipData
 import android.content.Intent
 import android.text.format.DateFormat
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +23,7 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Delete
@@ -57,13 +62,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.LinkAnnotation
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextLinkStyles
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withLink
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
@@ -73,6 +72,7 @@ import slowscript.warpinator.core.design.components.TooltipIconButton
 import slowscript.warpinator.core.design.theme.WarpinatorTheme
 import slowscript.warpinator.core.model.Message
 import slowscript.warpinator.core.model.Transfer
+import slowscript.warpinator.core.utils.rememberAnnotatedLinkText
 import java.util.Date
 import kotlin.math.abs
 
@@ -101,35 +101,7 @@ fun MessageListItem(
 
     val accentColor = MaterialTheme.colorScheme.primary
 
-    val annotatedMessage = remember(message.text) {
-        buildAnnotatedString {
-            // Catch urls
-            val urlRegex = "(https?://[a-zA-Z0-9./_?&=-]+)".toRegex()
-            var lastIndex = 0
-
-            urlRegex.findAll(message.text).forEach { match ->
-                append(message.text.substring(lastIndex, match.range.first))
-
-                withLink(
-                    LinkAnnotation.Url(
-                        url = match.value,
-                        styles = TextLinkStyles(
-
-                            style = SpanStyle(
-                                textDecoration = TextDecoration.Underline,
-                                color = accentColor,
-                            ),
-                        ),
-                    ),
-                ) {
-                    append(match.value)
-                }
-
-                lastIndex = match.range.last + 1
-            }
-            append(message.text.substring(lastIndex))
-        }
-    }
+    val annotatedMessage = rememberAnnotatedLinkText(message.text, accentColor)
 
     val onCopy: () -> Unit = {
         coroutineScope.launch {
@@ -169,6 +141,16 @@ fun MessageListItem(
         },
     )
 
+    val tileInteractionSource = remember { MutableInteractionSource() }
+    val clearInteractionSource = remember { MutableInteractionSource() }
+
+    val isTileHovered by tileInteractionSource.collectIsHoveredAsState()
+    val isTileFocused by tileInteractionSource.collectIsFocusedAsState()
+    val isButtonHovered by clearInteractionSource.collectIsHoveredAsState()
+    val isButtonPressed by clearInteractionSource.collectIsPressedAsState()
+
+    val showClearAction = isTileHovered || isTileFocused || isButtonHovered || isButtonPressed
+
     SwipeToDismissBox(
         state = swipeToDismissState,
         enableDismissFromStartToEnd = false,
@@ -199,6 +181,14 @@ fun MessageListItem(
                 },
                 trailingContent = {
                     Row {
+                        if (showClearAction) {
+                            TooltipIconButton(
+                                onClick = { onDelete() },
+                                icon = Icons.Rounded.Delete,
+                                description = stringResource(R.string.delete_message_action),
+                                interactionSource = clearInteractionSource,
+                            )
+                        }
                         TooltipIconButton(
                             onClick = onCopy,
                             icon = Icons.Rounded.ContentCopy,
@@ -212,12 +202,14 @@ fun MessageListItem(
                             color = containerColor,
                             shape = shape,
                         ) {
-                            Text(
-                                annotatedMessage,
-                                modifier = Modifier
-                                    .padding(16.dp)
-                                    .fillMaxWidth(),
-                            )
+                            SelectionContainer {
+                                Text(
+                                    annotatedMessage,
+                                    modifier = Modifier
+                                        .padding(16.dp)
+                                        .fillMaxWidth(),
+                                )
+                            }
                         }
 
                         1 -> Surface(
@@ -288,6 +280,7 @@ fun MessageListItem(
                 listItemModifier = Modifier.semantics {
                     customActions = semanticCustomActions
                 },
+                interactionSource = tileInteractionSource,
             )
         },
     )
