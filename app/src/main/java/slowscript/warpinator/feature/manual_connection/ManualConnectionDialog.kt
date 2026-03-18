@@ -93,11 +93,13 @@ import slowscript.warpinator.core.utils.transformers.ProtocolAddressInputValidat
 
 
 data class RecentRemoteOption(
-    val address: String, val fromClipboard: Boolean = false,
+    val address: String,
+    val name: String? = null,
+    val fromClipboard: Boolean = false,
 )
 
 fun List<RecentRemote>.toRecentRemoteOptions(): List<RecentRemoteOption> {
-    return this.map { RecentRemoteOption("${it.hostname}@${it.host}", false) }
+    return this.map { RecentRemoteOption(it.host, it.hostname, false) }
 }
 
 sealed interface ManualConnectionDialogState {
@@ -450,7 +452,7 @@ private fun QuickSelectRemoteDialog(
 
     var showValidationError by remember { mutableStateOf(false) }
 
-
+    val fromClipboardLabel = stringResource(R.string.from_clipboard_recent_remote_label)
     LaunchedEffect("GET_CLIPBOARD") {
         val clipData = clipboard.getClipEntry()?.clipData
         if ((clipData?.itemCount ?: 0) == 0) return@LaunchedEffect
@@ -461,7 +463,14 @@ private fun QuickSelectRemoteDialog(
         clipText = clipText.removePrefix(ProtocolAddressInputValidator.scheme)
         if (!ProtocolAddressInputValidator.isValidIp(clipText, false)) return@LaunchedEffect
 
-        recentRemotes.add(0, RecentRemoteOption(clipText, true))
+        recentRemotes.add(
+            0,
+            RecentRemoteOption(
+                clipText,
+                fromClipboardLabel,
+                true,
+            ),
+        )
     }
 
     val onSubmit = {
@@ -574,6 +583,13 @@ private fun RecentRemoteSegmentedListTile(
                 },
             )
         },
+        supportingContent = {
+            remote.name?.let {
+                Text(
+                    it,
+                )
+            }
+        },
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 1.dp),
@@ -631,9 +647,9 @@ fun ManualConnectionQuickSelectRecentsDialogPreview() {
                 QuickSelectRemoteDialog(
                     clipboard = LocalClipboard.current, onDismiss = {},
                     recentRemotes = listOf(
-                        RecentRemoteOption("192.168.0.90:42001", true),
-                        RecentRemoteOption("192.168.0.89:42001"),
-                        RecentRemoteOption("192.168.0.233:42002"),
+                        RecentRemoteOption("192.168.0.90:42001", "From clipboard", true),
+                        RecentRemoteOption("192.168.0.89:42001", "Device 1"),
+                        RecentRemoteOption("192.168.0.233:42002", "Device 2"),
                     ),
                     onStartConnection = {},
                 )

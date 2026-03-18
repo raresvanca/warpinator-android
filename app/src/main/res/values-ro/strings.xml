@@ -93,6 +93,7 @@
     <string name="recent_remotes_label">Dispozitive recente</string>
     <string name="no_recent_remotes">Niciun dispozitiv recent</string>
     <string name="paste_address_from_clipboard_label">Inserează adresa copiată</string>
+    <string name="from_clipboard_recent_remote_label">Adresă copiată</string>
     <string name="messages">Mesaje</string>
     <string name="message_text_field_placeholder">Mesaj…</string>
     <string name="message_history_with_content_description">Istoric mesaje cu %1$s</string>
