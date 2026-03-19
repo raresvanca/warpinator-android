@@ -139,7 +139,7 @@ class GrpcService(
         )
 
         remotesManager.getWorker(request.ident)?.onReceiveMessage(message)
-        return super.sendTextMessage(request)
+        return WarpProto.VoidType.getDefaultInstance()
     }
 
     override fun startTransfer(request: OpInfo): Flow<WarpProto.FileChunk> {
