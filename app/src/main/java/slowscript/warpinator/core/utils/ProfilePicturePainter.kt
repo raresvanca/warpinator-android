@@ -12,6 +12,17 @@ import android.graphics.Paint
 import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.createBitmap
 import androidx.core.net.toUri
@@ -98,9 +109,23 @@ internal object ProfilePicturePainter {
 
         // Fill background
         canvas.drawRect(0f, 0f, pictureSize.toFloat(), pictureSize.toFloat(), paint)
-        val padding = if (highRes) 32 else 16
+        val padding = if (highRes) 8 else 4
         foreground.setBounds(padding, padding, pictureSize - padding, pictureSize - padding)
         foreground.draw(canvas)
         return bmp
+    }
+}
+
+@Preview
+@Composable
+fun ProfilePicturePainterPreview() {
+    val context = LocalContext.current
+    Surface(
+        modifier = Modifier
+            .size(256.dp)
+            .clip(CircleShape),
+    ) {
+        val bitmap = ProfilePicturePainter.getProfilePicture("0", context, true)
+        Image(bitmap = bitmap.asImageBitmap(), null)
     }
 }

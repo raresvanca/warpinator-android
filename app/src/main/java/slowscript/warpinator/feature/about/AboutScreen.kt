@@ -105,8 +105,8 @@ fun AboutScreen() {
                                 painter = painterResource(R.drawable.ic_warpinator),
                                 contentDescription = null,
                                 modifier = Modifier
-                                    .padding(16.dp)
-                                    .size(48.dp),
+                                    .padding(8.dp)
+                                    .size(64.dp),
                                 colorFilter = ColorFilter.tint(
                                     MaterialTheme.colorScheme.onPrimaryContainer
                                 )
