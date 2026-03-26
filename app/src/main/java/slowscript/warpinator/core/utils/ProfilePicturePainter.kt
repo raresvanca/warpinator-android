@@ -98,7 +98,7 @@ internal object ProfilePicturePainter {
 
         // Fill background
         canvas.drawRect(0f, 0f, pictureSize.toFloat(), pictureSize.toFloat(), paint)
-        val padding = if (highRes) 32 else 16
+        val padding = if (highRes) 16 else 8
         foreground.setBounds(padding, padding, pictureSize - padding, pictureSize - padding)
         foreground.draw(canvas)
         return bmp
